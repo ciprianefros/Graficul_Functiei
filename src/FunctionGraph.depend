@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1702767479 source:c:\users\ciprian\desktop\functiongraph\main.cpp
+	<math.h>
+	<iostream>
+	<fstream>
+	<string.h>
+	<limits.h>
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<winbgim.h>
+	<graphics.h>
+
