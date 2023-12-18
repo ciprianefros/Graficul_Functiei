@@ -14,6 +14,7 @@
 #define MAX1 20
 using namespace std;
 
+
 int top1, top2;
 const int max_stiva = 100;
 
