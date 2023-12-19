@@ -33,19 +33,25 @@ int x, y;
 
 Fereastra fereastraDeschisa = MENIU;
 
-struct functie
+struct Functie
 {
     char expresie[300];
-    char vect[MAX+1][MAX1];
-    // vectorul cuprinzand “cuvintele”ce formeaza expresia}
+    char vect[MAX+1][MAX1]; // vectorul cuprinzand “cuvintele”ce formeaza expresia}
     int lung; // lungimea efectiva a vectorului
     float a,b; // intervalul de evaluare a functiei
     int n; //numarul de puncte de evaluare
 };
 
-struct punct {
+struct Punct {
     double x;
     double y;
+};
+
+struct Grafic {
+    float x1, x2;
+    float y1, y2;
+    float x1_ecran, x2_ecran;
+    float y1_ecran, y2_ecran;
 };
 
 
@@ -180,7 +186,7 @@ bool EsteNumar(char sir[MAX1])
             strchr("0123456789",sir[0]));
 }
 
-void tokenize(functie& F) {
+void tokenize(Functie& F) {
     int n = strlen(F.expresie);
     strcpy(F.vect[0], "(");
     int i = 0, j = 1;
@@ -236,7 +242,7 @@ void tokenize(functie& F) {
     strcpy(F.vect[j], ")");
 }
 
-double ValoareFunctie(functie E, double x)
+double ValoareFunctie(Functie F, double x)
 {
     int i;
     // returneaza valoarea functiei E in punctul x
@@ -251,19 +257,19 @@ double ValoareFunctie(functie E, double x)
     top2=1;
     Op[top2]='(';
     i=0;
-    while (i<=E.lung && top2>0)
+    while (i<=F.lung && top2>0)
     {
         i++;
-        if (EsteNumar(E.vect[i]))
+        if (EsteNumar(F.vect[i]))
         {
             // printf("\nE.vect[%d]=%s\n",i,E.vect[i]);
             top1++;
-            valo=atof(E.vect[i]);
+            valo=atof(F.vect[i]);
             Opd[top1]=valo;
             // depanare();
         }
         else
-            switch (E.vect[i][0]) {
+            switch (F.vect[i][0]) {
             /* constanta pi=3.1415926 se da sub forma literei q */
             case 'q': top1++; Opd[top1]=pi; break;
             case 'X': /* variabila x */ top1++; Opd[top1]=x;
@@ -272,7 +278,7 @@ double ValoareFunctie(functie E, double x)
             default:
                 /* operatii binare si unare */
                while ((top2>0) && !(strchr("()",Op[top2])) &&
-                   Prioritate(Op[top2])>=Prioritate(E.vect[i][0]))
+                   Prioritate(Op[top2])>=Prioritate(F.vect[i][0]))
                 {
                     if (top1>1) x_1=Opd[top1-1];
                     x_2=Opd[top1];
@@ -303,9 +309,9 @@ double ValoareFunctie(functie E, double x)
                 }
             // depanare();
             if (top2>0)
-                if ((Op[top2]!='(') || (strcmp(E.vect[i],")")))
+                if ((Op[top2]!='(') || (strcmp(F.vect[i],")")))
                     {
-                        top2++; Op[top2] = E.vect[i][0];
+                        top2++; Op[top2] = F.vect[i][0];
                     }
                 else top2--;
             }
@@ -315,7 +321,7 @@ double ValoareFunctie(functie E, double x)
 }
 
 
-double maxVal(functie F) {
+double maxVal(Functie F) {
 
     double maxValue = ValoareFunctie(F, F.a);
 
@@ -329,7 +335,7 @@ double maxVal(functie F) {
     return maxValue;
 }
 
-double minVal(functie F) {
+double minVal(Functie F) {
 
     double minValue = ValoareFunctie(F, F.a);
 
@@ -343,16 +349,250 @@ double minVal(functie F) {
     return minValue;
 }
 
-void deseneazaGrafic(functie F) {
-    const int x1 = 267;
-    const int x2 = 799;
-    const int y1 = 210;
-    const int y2 = 590;
+Punct translate(Punct p, Grafic g)
+{
+    Punct res;
+    res.x = (p.x - g.x1) / (g.x2 - g.x1) * (g.x2_ecran - g.x1_ecran) + g.x1_ecran;
+    res.y = (p.y - g.y1) / (g.y2 - g.y1) * (g.y2_ecran - g.y1_ecran) + g.y1_ecran;
+    return res;
+};
+
+void draw_axis(Grafic g)
+{
+    setlinestyle(0, USERBIT_LINE, 1);
+
+    Punct origine;
+    origine.x = 0;
+    origine.y = 0;
+    origine = translate(origine, g);
+
+    if(origine.x > g.x1_ecran && origine.x < g.x2_ecran)
+        line(origine.x, g.y2_ecran, origine.x, g.y1_ecran);
+
+    if(origine.y > g.y1_ecran && origine.y < g.y2_ecran)
+        line(g.x1_ecran, origine.y, g.x2_ecran, origine.y);
+
+    Punct bare;
+    setfillstyle(1, 0);
+    settextjustify( 1, 2);
+
+    char str[20];
+
+    if(origine.y > g.y1_ecran && origine.y < g.y2_ecran)
+    {
+        for (int i = g.x1; i < g.x2; ++i)
+        {
+            bare.x = i;
+            bare.y = 0;
+            if(bare.x != 0)
+            {
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%5 == 0) || (abs(g.x1-g.x2) >= 100 && i%10 == 0))
+                {
+
+                bare = translate(bare, g);
+                bar(bare.x - 1, origine.y + 6, bare.x + 1, origine.y - 6);
+
+                ltoa(i,str,10);
+                outtextxy(bare.x, origine.y + 10, str);
+                }
+            }
+        }
+    }
+
+
+    if(origine.x > g.x1_ecran && origine.x < g.x2_ecran)
+    {
+        for (int i = g.y2; i < g.y1; ++i)
+        {
+            bare.x = 0;
+            bare.y = i;
+            if(bare.y != 0)
+            {
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%5 == 0) || (abs(g.x1-g.x2) >= 100 && i%10 == 0))
+                {
+                bare = translate(bare, g);
+                bar(origine.x - 6, bare.y + 1, origine.x + 6, bare.y - 1);
+
+                ltoa(i,str,10);
+                outtextxy(origine.x - 20, bare.y - 8, str);
+                }
+            }
+        }
+    }
+}
+
+
+void deseneazaGrafic(Grafic g, Functie F, Punct& minGraf, Punct& maxGraf)
+{
+    setbkcolor(15);
+    cleardevice();
+
+    settextstyle(0, HORIZ_DIR, 2);
+
+    setcolor(0);
+    draw_axis(g);
+
+    Punct p1, p2;
+    p1.x = g.x1;
+    p1.y = ValoareFunctie(F,p1.x);
+
+    float diferentaPuncte = 0.05;
+
+
+    //d_asy = false;
+
+    for(int i=0; i < F.lung; ++i)
+    {
+        if(strcmp(F.vect[i],"btg")==0 || strcmp(F.vect[i],"tg")==0 || F.vect[i][0]=='/' || strcmp(F.vect[i],"ln")==0)
+        {
+            //d_asy = true;
+            diferentaPuncte = 0.005;
+        }
+        if(strcmp(F.vect[i],"drcsin")==0 || strcmp(F.vect[i],"frccos")==0)
+        {
+            diferentaPuncte = 0.005;
+        }
+    }
+
+    //min - max
+
+    static bool alege_min = true, alege_max = true;
+
+    if(minGraf.x < g.x1 || minGraf.x > g.x2 ||(minGraf.y < g.y2 || minGraf.y > g.y1) || isnan(minGraf.y))
+    {
+        if(minGraf.y < g.y2 || minGraf.y > g.y1 || isnan(minGraf.y))
+        {
+            minGraf.x = g.x1;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            while(minGraf.y < g.y2 || minGraf.y > g.y1 || isnan(minGraf.y))
+            {
+                minGraf.x += diferentaPuncte;
+                minGraf.y = ValoareFunctie(F, minGraf.x);
+                if(minGraf.x > g.x2)
+                    break;
+            }
+        }
+        if(minGraf.x < g.x1)
+        {
+            minGraf.x = g.x1;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            alege_min = true;
+        }
+        if(minGraf.x > g.x2)
+        {
+            minGraf.x = g.x2;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            alege_min = true;
+        }
+    }
+
+
+    if(maxGraf.x < g.x1 || maxGraf.x > g.x2 || (maxGraf.y < g.y2 || maxGraf.y > g.y1) || isnan(maxGraf.y))
+    {
+        if(maxGraf.y < g.y2 || maxGraf.y > g.y1 || isnan(maxGraf.y))
+        {
+            maxGraf.x = g.x1;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            while(maxGraf.y < g.y2 || maxGraf.y > g.y1 || isnan(maxGraf.y))
+            {
+                maxGraf.x += diferentaPuncte;
+                maxGraf.y = ValoareFunctie(F, maxGraf.x);
+                if(maxGraf.x > g.x2)
+                    break;
+            }
+        }
+        if(maxGraf.x < g.x1)
+        {
+            maxGraf.x = g.x1;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            alege_max = true;
+        }
+        if(maxGraf.x > g.x2)
+        {
+            maxGraf.x = g.x2;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            alege_max = true;
+        }
+    }
+
+    Punct p1t, p2t;
+
+    setlinestyle(0, USERBIT_LINE, 3);
+    //setcolor(COLOR(RED_VALUE(color_graph), GREEN_VALUE(color_graph), BLUE_VALUE(color_graph)));
+    setcolor(COLOR(93, 142, 193));
+    while(p1.x <= g.x2)
+        {
+        p2.x = p1.x;
+        p2.y = p1.y;
+        p1.x += diferentaPuncte;
+        p1.y = ValoareFunctie(F,p1.x);
+
+        p1t = translate(p1, g);
+        p2t = translate(p2, g);
+
+        if(p1.y > g.y2 && p1.y < g.y1)
+        {
+            if(minGraf.y > p1.y)
+            {
+                minGraf = p1;
+            }
+            else if(minGraf.y == p1.y && alege_min)
+            {
+                minGraf = p1;
+                alege_min = false;
+            }
+            if(maxGraf.y < p1.y)
+            {
+                maxGraf = p1;
+            }
+            else if(maxGraf.y == p1.y && alege_max)
+            {
+                maxGraf = p1;
+                alege_max = false;
+            }
+        }
+
+            if(p1.y < g.y1 + 200 && p1.y > g.y2 - 200)
+            {
+                if(p1.y > g.y1)
+                {
+                    p1.y = g.y1 + 10;
+                }
+
+                if(p1.y < g.y2)
+                {
+                    p1.y = g.y2 - 10;
+                }
+
+                if(abs(p1.y - p2.y) < 200)
+                    line(int(p1t.x), int(p1t.y), int(p2t.x), int(p2t.y));
+                /*else if (draw_asymptotes)
+                {
+                    setcolor(COLOR(RED_VALUE(color_asym), GREEN_VALUE(color_asym), BLUE_VALUE(color_asym)));
+                    line(p1t.x - 2 , g.y2_ecran, p1t.x - 2, g.y1_ecran);
+                    setcolor(COLOR(RED_VALUE(color_graph), GREEN_VALUE(color_graph), BLUE_VALUE(color_graph)));
+                }*/
+            }
+        }
+
+        //std::cout << min_g.y << " " << max_g.y << '\n';
+
+    setcolor(0);
+    setlinestyle(0, USERBIT_LINE, 1);
+}
+
+/*void deseneazaGrafic(functie F) {
+
+
+    const int x1 = 0;
+    const int x2 = GetSystemMetrics(SM_CXSCREEN)-100;
+    const int y1 = 0;
+    const int y2 = GetSystemMetrics(SM_CYSCREEN)-100;
 
     double minValue = minVal(F);
     double maxValue = maxVal(F);
 
-    outtextxy(20, 150, F.expresie);
+    //outtextxy(20, 150, F.expresie);
 
     setcolor(COLOR(51, 115, 176));
     setlinestyle(0, 0, 2);
@@ -385,7 +625,7 @@ void deseneazaGrafic(functie F) {
     }
 }
 
-/*void deseneazaGrafic(functie F, double xScale, double yScale) {
+void deseneazaGrafic(functie F, double xScale, double yScale) {
 
     const int xGraphWindow = 533;
     const int yGraphWindow = 400;
@@ -493,7 +733,7 @@ void deseneazaChenar(){
 
 }
 
-void zoomInOut(functie F, double& xScale, double& yScale, double zoomFactor) {
+void zoomInOut(Functie F, double& xScale, double& yScale, double zoomFactor) {
     // Calculeaza minimul si maximul functiei
     double minY = ValoareFunctie(F, F.a);
     double maxY = minY;
@@ -516,8 +756,6 @@ void zoomInOut(functie F, double& xScale, double& yScale, double zoomFactor) {
     // Clear and redraw the graph with the updated scales
     cleardevice();
     deseneazaChenar();
-    //deseneazaGrafic(F, xScale, yScale);
-    deseneazaGrafic(F);
 }
 void reguli() {
     outtextxy(12, 12, "Ce reguli sa scriu aici???????");
@@ -630,6 +868,8 @@ void setari() {
 
 void deseneazaMenu() {
 
+    int mijloc = GetSystemMetrics(SM_CXSCREEN)/2;
+
     setbkcolor(COLOR(28,33,39));
 
     setfillstyle(SOLID_FILL, COLOR(28,33,39));
@@ -650,7 +890,8 @@ void deseneazaMenu() {
     rectangle(290, 355, 375, 380);
     outtextxy(300, 360, "Iesire");
 }
-void afisareAsimptote(functie F)
+
+void afisareAsimptote(Functie F)
 {
     int i;
     double valoare1,valoare2;
@@ -665,7 +906,7 @@ void afisareAsimptote(functie F)
 
 }
 
-void determinaPuncteMinime(functie F)
+void determinaPuncteMinime(Functie F)
 {
     double h = 0.0001;
     double x, df, d2f;
@@ -681,7 +922,7 @@ void determinaPuncteMinime(functie F)
     }
 }
 
-void determinaPuncteMaxime(functie F)
+void determinaPuncteMaxime(Functie F)
 {
     double h = 0.0001;
     double x, df, d2f;
@@ -701,15 +942,28 @@ void determinaPuncteMaxime(functie F)
 
 int main() {
 
-    initwindow(800, 600, "Function Graph");
+
+    int screen_width = GetSystemMetrics(SM_CXSCREEN);
+    int screen_height = GetSystemMetrics(SM_CYSCREEN);
+
+    Grafic g;
+    g.x1_ecran = 0;
+    g.x2_ecran = screen_width;
+    g.y1_ecran = 0;
+    g.y2_ecran = screen_height;
+
+    Punct minGraf, maxGraf;
+
+
+    initwindow(screen_width, screen_height, "Function Graph");
     const int numPoints = 800;
-    const double initialXScale = 800.0;
-    const double initialYScale = 600.0;
+    const double initialXScale = screen_width;
+    const double initialYScale = screen_height;
 
     double xScale = 1;
     double yScale = 1;
 
-    functie F;
+    Functie F;
 
     std::ifstream file("function.txt");
 
@@ -733,6 +987,22 @@ int main() {
     strcat(F.expresie, ")");
     tokenize(F);
     F.lung = strlen(F.expresie);
+
+    g.x1 = F.a;
+    g.x2 = F.b;
+
+    float dif = (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
+
+    g.y1 = dif/2;
+    g.y2 = g.y1 - (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
+
+
+    minGraf.x = g.x1;
+    minGraf.y = ValoareFunctie(F, minGraf.x);
+
+    maxGraf.x = g.x1;
+    maxGraf.y = ValoareFunctie(F, maxGraf.x);
+
     deseneazaMenu();
     while (!kbhit()) {
         if (ismouseclick(WM_LBUTTONDOWN)) {
@@ -745,9 +1015,10 @@ int main() {
 
                         fereastraDeschisa = GRAFIC;
                         cleardevice();
-                        deseneazaChenar();
+                        //deseneazaChenar();
                         //deseneazaGrafic(F, 1, 1);
-                        deseneazaGrafic(F);
+                        deseneazaGrafic(g, F, minGraf, maxGraf);
+
                         delay(200); // Reduce delay for better responsiveness
 
                     } else if (x >= 290 && x <= 388 && y >= 235 && y <= 260) {

@@ -11,3 +11,15 @@
 	<winbgim.h>
 	<graphics.h>
 
+1703019084 source:d:\fii\semestrul i\introducere în programare\proiect_ip_function_graph\src\main.cpp
+	<math.h>
+	<iostream>
+	<fstream>
+	<string.h>
+	<limits.h>
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<winbgim.h>
+	<graphics.h>
+
