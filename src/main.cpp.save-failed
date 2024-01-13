@@ -1,0 +1,1140 @@
+#include <math.h>
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <winbgim.h>
+#include <graphics.h>
+#define infinit INT_MAX
+#define epsi 0.0001
+#define  MAX 100
+#define MAX1 20
+using namespace std;
+
+
+int top1, top2;
+const int max_stiva = 100;
+
+double Opd[max_stiva]; // stiva operanzilor
+char Op[max_stiva]; // stiva operatorilor
+
+char OperatiiBinare[200]="+-*/^<>=#";
+char OperatiiUnare[200]="scarel";
+char Operatii[200]="+-*/^<>=#scarel";
+
+char projectpath[] = "D:\\FII\Semestrul I\\Introducere în programare\\Proiect_IP_Function_Graph\\src";
+
+char limba = 'r';
+
+const float pi=3.1415926; // se da sub forma literei q
+
+enum Fereastra { MENIU, GRAFIC, REGULI, INTERESANT, SETARI};
+
+int x, y;
+
+Fereastra fereastraDeschisa = MENIU;
+
+struct Functie
+{
+    char expresie[300];
+    char vect[MAX+1][MAX1]; // vectorul cuprinzand “cuvintele”ce formeaza expresia}
+    int lung; // lungimea efectiva a vectorului
+    float a,b; // intervalul de evaluare a functiei
+    int n; //numarul de puncte de evaluare
+};
+
+struct Punct {
+    double x;
+    double y;
+};
+
+struct Grafic {
+    float x1, x2;
+    float y1, y2;
+    float x1_ecran, x2_ecran;
+    float y1_ecran, y2_ecran;
+};
+
+struct apasat
+{
+    bool deschidePag;
+    bool minimGraf;
+    bool maximGraf;
+    bool salveaza;
+};
+
+
+int Prioritate(char c)  // prioritate operatorilor
+{
+    if(c=='(' || c==')')
+        return 0;
+    if(c=='+' || c=='-')
+        return 1;
+    if(c=='*' || c=='/')
+        return 2;
+    if(c=='^')
+        return 3;
+    if(c=='=' || c=='#' || c=='<' || c=='>')
+        return 4;
+    if(c=='c' || c=='s' || c=='l' || c=='e' || c=='t' || c=='a' || c=='r')
+        return 5;
+}
+
+bool DifInf(float x)
+{
+    return fabs(infinit-fabs(x)) > infinit / 2.0;
+}
+
+float Logaritm(float x)
+{
+    if (x>epsi && DifInf(x))
+        return log(x);
+    else
+        return infinit;
+}
+
+float Exponential(float x)
+{
+    if (DifInf(x)) return exp(x);
+    else return infinit;
+}
+
+float Inmultit(float x, float y)
+{
+    if (fabs(x < epsi) || fabs(y) < epsi) return 0;
+        else if (DifInf(x) && DifInf(y)) return x*y;
+            else return infinit;
+}
+
+float Putere(float x, float y)
+{
+    // float p;
+    if (x==0) return 0;
+    else if (y==0) return 1;
+    else if (x==infinit || y==infinit) return infinit;
+    else
+        return pow(x,y);
+}
+
+float Egal(float x, float y)
+{
+    return x==y;
+}
+
+float Diferit(float x, float y)
+{
+    return x!=y;
+}
+
+float MaiMic(float x, float y)
+{
+    return x < y;
+}
+
+bool MaiMare(float x, float y)
+{
+    return x > y;
+}
+
+float Plus(float x, float y)
+{
+    if (DifInf(x) && DifInf(y))  return x+y;
+    else return infinit;
+}
+
+float Minus(float x, float y)
+{
+    if (DifInf(x) && DifInf(y))  return x-y;
+    else return infinit;
+}
+
+float Impartit(float x, float y)
+{
+    if (fabs(y)>epsi) return x/y;
+    else return infinit;
+}
+
+float Sinus(float x)
+{
+    if (DifInf(x))  return sin(x);
+    else return infinit;
+}
+
+float Cosinus(float x)
+{
+    if (DifInf(x))  return cos(x);
+    else return infinit;
+}
+
+float Modul(float x)
+{
+    if (DifInf(x)) return fabs(x);
+    else return infinit;
+}
+
+float Radical(float x)
+{
+    if (DifInf(x) && (x>epsi)) return sqrt(x);
+    else return infinit;
+}
+
+float Tangenta(float x)
+{
+    return (sin(x)/cos(x));
+
+}
+
+float Cotangenta(float x)
+{
+    return (cos(x)/sin(x));
+}
+
+float arcsin(float x)
+{
+    if(DifInf(x))
+        return asin(x);
+    else return infinit;
+}
+float arccos(float x)
+{
+    if(DifInf(x))
+        return acos(x);
+    else return infinit;
+}
+
+float arctg(float x)
+{
+    if(DifInf(x))
+        return atan(x);
+    else return infinit;
+}
+
+float arcctg(float x)
+{
+    if(DifInf(x))
+        return pi/2 - atan(x);
+    else return infinit;
+}
+
+bool EsteNumar(char sir[MAX1])
+{
+    return (atof(sir)!=0.0 &&
+            strchr("0123456789",sir[0]));
+}
+
+void tokenize(Functie& F) {
+    int n = strlen(F.expresie);
+    strcpy(F.vect[0], "(");
+    int i = 0, j = 1;
+
+    while (i < n) {
+        if (isdigit(F.expresie[i])) {
+            int k = 0;
+            while (isdigit(F.expresie[i])) {
+                F.vect[j][k] = F.expresie[i];
+                i++;
+                k++;
+            }
+            F.vect[j][k] = '\0';
+        } else if (isalpha(F.expresie[i])) {
+            int k = 0;
+            while (isalpha(F.expresie[i])) {
+                F.vect[j][k] = F.expresie[i];
+                i++;
+                k++;
+            }
+
+            // Verificăm pentru funcțiile specifice și reducem dacă este cazul
+            if (strncmp(F.vect[j], "sin", 3) == 0) {
+                strcpy(F.vect[j], "s");
+                i -= 2;  // Sărim înapoi peste "in"
+            } else if (strncmp(F.vect[j], "cos", 3) == 0) {
+                strcpy(F.vect[j], "c");
+                i -= 2;  // Sărim înapoi peste "os"
+            } else if (strncmp(F.vect[j], "log", 3) == 0) {
+                strcpy(F.vect[j], "l");
+                i -= 2;  // Sărim înapoi peste "og"
+            } else if (strncmp(F.vect[j], "abs", 3) == 0) {
+                strcpy(F.vect[j], "a");
+                i -= 2;  // Sărim înapoi peste "bs"
+            } else if (strncmp(F.vect[j], "root", 4) == 0) {
+                strcpy(F.vect[j], "r");
+                i -= 3;  // Sărim înapoi peste "oot"
+            } else if (strncmp(F.vect[j], "exp", 4) == 0) {
+                strcpy(F.vect[j], "e");
+                i -= 2;  // Sărim înapoi peste "xp"
+            }
+
+            F.vect[j][k] = '\0';
+        } else {
+            strncpy(F.vect[j], F.expresie + i, 1);
+            F.vect[j][1] = '\0';
+            i++;
+        }
+
+        j++;
+    }
+
+    strcpy(F.vect[j], ")");
+}
+
+double ValoareFunctie(Functie F, double x)
+{
+    int i;
+    // returneaza valoarea functiei E in punctul x
+    double valo,x_1,x_2;
+    //calculul expresiei
+    for (i=1; i<=max_stiva; i++)
+    {
+        Opd[i]=0;
+        Op[i]='@';
+    }
+    top1=0;
+    top2=1;
+    Op[top2]='(';
+    i=0;
+    while (i<=F.lung && top2>0)
+    {
+        i++;
+        if (EsteNumar(F.vect[i]))
+        {
+            // printf("\nE.vect[%d]=%s\n",i,E.vect[i]);
+            top1++;
+            valo=atof(F.vect[i]);
+            Opd[top1]=valo;
+            // depanare();
+        }
+        else
+            switch (F.vect[i][0]) {
+            /* constanta pi=3.1415926 se da sub forma literei q */
+            case 'q': top1++; Opd[top1]=pi; break;
+            case 'X': /* variabila x */ top1++; Opd[top1]=x;
+                /* printf("\n-->x=%f\n",x); */ break;
+            case '(': /* inceput de bloc */ top2++; Op[top2]='('; break;
+            default:
+                /* operatii binare si unare */
+               while ((top2>0) && !(strchr("()",Op[top2])) &&
+                   Prioritate(Op[top2])>=Prioritate(F.vect[i][0]))
+                {
+                    if (top1>1) x_1=Opd[top1-1];
+                    x_2=Opd[top1];
+                    // depanare();
+                    /* functii scrise in OPERATII */
+                    switch (Op[top2]) {
+                        case '=': valo=Egal(x_1,x_2); break;
+                        case '#': valo=Diferit(x_1,x_2); break;
+                        case '<': valo=MaiMic(x_1,x_2); break;
+                        case '>': valo=MaiMare(x_1,x_2); break;
+                        case '+': valo=Plus(x_1,x_2); break;
+                        case '-': valo=Minus(x_1,x_2); break;
+                        case '*': valo=Inmultit(x_1,x_2); break;
+                        case '/': valo=Impartit(x_1,x_2); break;
+                        case '^': valo=Putere(x_1,x_2); break;
+                        case 's': valo=Sinus(x_2); break;
+                        case 'c': valo=Cosinus(x_2); break;
+                        case 'l': valo=Logaritm(x_2); break;
+                        case 'e': valo=Exponential(x_2); break;
+                        case 'a': valo=Modul(x_2); break;
+                        case 'r': valo=Radical(x_2); break;
+                        case 't': valo=Tangenta(x_2); break;
+                        case 'C': valo=Cotangenta(x_2); break;
+                    } //operator[top2]
+                    if (strchr(OperatiiBinare,Op[top2])) top1--;
+                    if (strchr(Operatii,Op[top2])) Opd[top1]=valo;
+                    top2--;
+                }
+            // depanare();
+            if (top2>0)
+                if ((Op[top2]!='(') || (strcmp(F.vect[i],")")))
+                    {
+                        top2++; Op[top2] = F.vect[i][0];
+                    }
+                else top2--;
+            }
+    }
+    if (top2==0) return Opd[1];
+    else return infinit;
+}
+
+
+double maxVal(Functie F) {
+
+    double maxValue = ValoareFunctie(F, F.a);
+
+    for (int i = F.a; i <= F.b; i++) {
+        double value = ValoareFunctie(F, i);
+
+        if (value > maxValue) {
+            maxValue = value;
+        }
+    }
+    return maxValue;
+}
+
+double minVal(Functie F) {
+
+    double minValue = ValoareFunctie(F, F.a);
+
+
+    for (int i = F.a; i <= F.b; i++) {
+        double value = ValoareFunctie(F, i);
+        if (value < minValue) {
+            minValue = value;
+        }
+    }
+    return minValue;
+}
+
+Punct translate(Punct p, Grafic g)
+{
+    Punct res;
+    res.x = (p.x - g.x1) / (g.x2 - g.x1) * (g.x2_ecran - g.x1_ecran) + g.x1_ecran;
+    res.y = (p.y - g.y1) / (g.y2 - g.y1) * (g.y2_ecran - g.y1_ecran) + g.y1_ecran;
+    return res;
+};
+
+void draw_axis(Grafic g)
+{
+    setlinestyle(0, USERBIT_LINE, 1);
+
+    Punct origine;
+    origine.x = 0;
+    origine.y = 0;
+    origine = translate(origine, g);
+
+    if(origine.x > g.x1_ecran && origine.x < g.x2_ecran)
+        line(origine.x, g.y2_ecran, origine.x, g.y1_ecran);
+
+    if(origine.y > g.y1_ecran && origine.y < g.y2_ecran)
+        line(g.x1_ecran, origine.y, g.x2_ecran, origine.y);
+
+    Punct bare;
+    setfillstyle(1, 0);
+    settextjustify( 1, 2);
+
+    char str[20];
+
+    if(origine.y > g.y1_ecran && origine.y < g.y2_ecran)
+    {
+        for (int i = g.x1; i < g.x2; ++i)
+        {
+            bare.x = i;
+            bare.y = 0;
+            if(bare.x != 0)
+            {
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%5 == 0) || (abs(g.x1-g.x2) >= 100 && i%10 == 0))
+                {
+
+                bare = translate(bare, g);
+                bar(bare.x - 1, origine.y + 6, bare.x + 1, origine.y - 6);
+
+                ltoa(i,str,10);
+                outtextxy(bare.x, origine.y + 10, str);
+                }
+            }
+        }
+    }
+
+
+    if(origine.x > g.x1_ecran && origine.x < g.x2_ecran)
+    {
+        for (int i = g.y2; i < g.y1; ++i)
+        {
+            bare.x = 0;
+            bare.y = i;
+            if(bare.y != 0)
+            {
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%5 == 0) || (abs(g.x1-g.x2) >= 100 && i%10 == 0))
+                {
+                bare = translate(bare, g);
+                bar(origine.x - 6, bare.y + 1, origine.x + 6, bare.y - 1);
+
+                ltoa(i,str,10);
+                outtextxy(origine.x - 20, bare.y - 8, str);
+                }
+            }
+        }
+    }
+}
+
+
+void deseneazaGrafic(Grafic g, Functie F, Punct& minGraf, Punct& maxGraf)
+{
+    setbkcolor(COLOR(28,33,39));
+    cleardevice();
+
+    settextstyle(0, HORIZ_DIR, 2);
+
+    setcolor(COLOR(240,236,235));
+    draw_axis(g);
+
+    Punct p1, p2;
+    p1.x = g.x1;
+    p1.y = ValoareFunctie(F,p1.x);
+
+    float diferentaPuncte = 0.05;
+
+
+    //d_asy = false;
+
+    for(int i=0; i < F.lung; ++i)
+    {
+        if(strcmp(F.vect[i],"btg")==0 || strcmp(F.vect[i],"tg")==0 || F.vect[i][0]=='/' || strcmp(F.vect[i],"ln")==0)
+        {
+            //d_asy = true;
+            diferentaPuncte = 0.005;
+        }
+        if(strcmp(F.vect[i],"drcsin")==0 || strcmp(F.vect[i],"frccos")==0)
+        {
+            diferentaPuncte = 0.005;
+        }
+    }
+
+    //min - max
+
+    static bool alege_min = true, alege_max = true;
+
+    if(minGraf.x < g.x1 || minGraf.x > g.x2 ||(minGraf.y < g.y2 || minGraf.y > g.y1) || isnan(minGraf.y))
+    {
+        if(minGraf.y < g.y2 || minGraf.y > g.y1 || isnan(minGraf.y))
+        {
+            minGraf.x = g.x1;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            while(minGraf.y < g.y2 || minGraf.y > g.y1 || isnan(minGraf.y))
+            {
+                minGraf.x += diferentaPuncte;
+                minGraf.y = ValoareFunctie(F, minGraf.x);
+                if(minGraf.x > g.x2)
+                    break;
+            }
+        }
+        if(minGraf.x < g.x1)
+        {
+            minGraf.x = g.x1;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            alege_min = true;
+        }
+        if(minGraf.x > g.x2)
+        {
+            minGraf.x = g.x2;
+            minGraf.y = ValoareFunctie(F, minGraf.x);
+            alege_min = true;
+        }
+    }
+
+
+    if(maxGraf.x < g.x1 || maxGraf.x > g.x2 || (maxGraf.y < g.y2 || maxGraf.y > g.y1) || isnan(maxGraf.y))
+    {
+        if(maxGraf.y < g.y2 || maxGraf.y > g.y1 || isnan(maxGraf.y))
+        {
+            maxGraf.x = g.x1;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            while(maxGraf.y < g.y2 || maxGraf.y > g.y1 || isnan(maxGraf.y))
+            {
+                maxGraf.x += diferentaPuncte;
+                maxGraf.y = ValoareFunctie(F, maxGraf.x);
+                if(maxGraf.x > g.x2)
+                    break;
+            }
+        }
+        if(maxGraf.x < g.x1)
+        {
+            maxGraf.x = g.x1;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            alege_max = true;
+        }
+        if(maxGraf.x > g.x2)
+        {
+            maxGraf.x = g.x2;
+            maxGraf.y = ValoareFunctie(F, maxGraf.x);
+            alege_max = true;
+        }
+    }
+
+    Punct p1t, p2t;
+
+    setlinestyle(0, USERBIT_LINE, 3);
+    //setcolor(COLOR(RED_VALUE(color_graph), GREEN_VALUE(color_graph), BLUE_VALUE(color_graph)));
+    setcolor(COLOR(93, 142, 193));
+    while(p1.x <= g.x2)
+        {
+        p2.x = p1.x;
+        p2.y = p1.y;
+        p1.x += diferentaPuncte;
+        p1.y = ValoareFunctie(F,p1.x);
+
+        p1t = translate(p1, g);
+        p2t = translate(p2, g);
+
+        if(p1.y > g.y2 && p1.y < g.y1)
+        {
+            if(minGraf.y > p1.y)
+            {
+                minGraf = p1;
+            }
+            else if(minGraf.y == p1.y && alege_min)
+            {
+                minGraf = p1;
+                alege_min = false;
+            }
+            if(maxGraf.y < p1.y)
+            {
+                maxGraf = p1;
+            }
+            else if(maxGraf.y == p1.y && alege_max)
+            {
+                maxGraf = p1;
+                alege_max = false;
+            }
+        }
+
+            if(p1.y < g.y1 + 200 && p1.y > g.y2 - 200)
+            {
+                if(p1.y > g.y1)
+                {
+                    p1.y = g.y1 + 10;
+                }
+
+                if(p1.y < g.y2)
+                {
+                    p1.y = g.y2 - 10;
+                }
+
+                if(abs(p1.y - p2.y) < 200)
+                    line(int(p1t.x), int(p1t.y), int(p2t.x), int(p2t.y));
+                /*else if (draw_asymptotes)
+                {
+                    setcolor(COLOR(RED_VALUE(color_asym), GREEN_VALUE(color_asym), BLUE_VALUE(color_asym)));
+                    line(p1t.x - 2 , g.y2_ecran, p1t.x - 2, g.y1_ecran);
+                    setcolor(COLOR(RED_VALUE(color_graph), GREEN_VALUE(color_graph), BLUE_VALUE(color_graph)));
+                }*/
+            }
+        }
+
+        //std::cout << min_g.y << " " << max_g.y << '\n';
+
+    setcolor(0);
+    setlinestyle(0, USERBIT_LINE, 1);
+    settextstyle(0, HORIZ_DIR, 2);
+}
+
+
+void draw_buttons(const Grafic& g, apasat& apasat, char projectpath[])
+{
+    char text[100] = " ";
+
+    setfillstyle(SOLID_FILL, COLOR(3,57, 108));
+    setbkcolor(COLOR(3, 57, 108));
+    settextstyle(3, HORIZ_DIR, 3);
+    setcolor(15);
+
+    settextjustify( 1, 2);
+
+    char backbutton[255] = "";
+    strcpy(backbutton, projectpath);
+    strcat(backbutton, "\\images\\backbutton.jpg");
+
+
+
+    strcpy(text, "Inapoi");
+
+
+    readimagefile( backbutton, g.x1_ecran + 10, g.y1_ecran + 5, g.x2_ecran + 100, g.y1_ecran + 75);
+    //bar(g.x1_ecran + 20, g.y1_ecran + 20, g.x1_ecran + 100, g.y1_ecran + 60);
+    outtextxy(g.x1_ecran + 65, 25, text);
+
+    strcpy(text, "Salveaza");
+
+
+    bar(g.x1_ecran + 120, g.y1_ecran + 20, g.x1_ecran + 220, g.y1_ecran + 60);
+    outtextxy(g.x1_ecran + 170, 25, text);
+
+    settextstyle(10, HORIZ_DIR, 5);
+    bar(g.x2_ecran - 90, g.y1_ecran + 82, g.x2_ecran - 46, g.y1_ecran + 38);
+    outtextxy(g.x2_ecran - 67, g.y1_ecran + 40, "+");
+
+
+    bar(g.x2_ecran - 90, g.y1_ecran + 132, g.x2_ecran - 46, g.y1_ecran + 88);
+    outtextxy(g.x2_ecran - 67, g.y1_ecran + 90, "-");
+
+    settextstyle(10, HORIZ_DIR, 3);
+
+    if(apasat.minimGraf)
+    {
+        setfillstyle(SOLID_FILL, COLOR(1, 3, 75));
+        setbkcolor(COLOR(1, 3, 75));
+    }
+    else
+    {
+        setfillstyle(SOLID_FILL, COLOR(3,57, 108));
+        setbkcolor(COLOR(3, 57, 108));
+    }
+
+    bar(g.x1_ecran + 20, g.y2_ecran - 80, g.x1_ecran + 80, g.y2_ecran - 40);
+    outtextxy(g.x1_ecran + 50, g.y2_ecran - 75, "MIN");
+
+    if(apasat.maximGraf)
+    {
+        setfillstyle(SOLID_FILL, COLOR(1, 3, 75));
+        setbkcolor(COLOR(1, 3, 75));
+    }
+    else
+    {
+        setfillstyle(SOLID_FILL, COLOR(3,57, 108));
+        setbkcolor(COLOR(3, 57, 108));
+    }
+
+    bar(g.x1_ecran + 100, g.y2_ecran - 80, g.x1_ecran + 160, g.y2_ecran - 40);
+    outtextxy(g.x1_ecran + 130, g.y2_ecran - 75, "MAX");
+
+    /*if(d_asy)
+    {
+        if(draw_asymptotes)
+        {
+            setfillstyle(SOLID_FILL, COLOR(255, 0, 0));
+            setbkcolor(COLOR(255, 0, 0));
+        }
+        else
+        {
+            setfillstyle(SOLID_FILL, 4);
+            setbkcolor(4);
+        }
+    }
+    else
+    {
+        setfillstyle(SOLID_FILL, COLOR( 153, 153, 153));
+        setbkcolor(COLOR( 153, 153, 153));
+    }*/
+
+    if(limba == 'r')
+        strcpy(text, "ASIMPTOTE");
+    else if(limba == 'e')
+        strcpy(text, "ASYMPTOTES");
+
+    bar(g.x1_ecran + 180, g.y2_ecran - 80, g.x1_ecran + 340, g.y2_ecran - 40);
+    outtextxy(g.x1_ecran + 260, g.y2_ecran - 75, text);
+
+}
+
+void deseneazaMargine() {
+
+    setcolor(COLOR(51, 115, 176));
+    rectangle(267, 200, 798, 598);
+
+}
+
+void deseneazaAxe() {
+
+    setcolor(COLOR(190, 212, 233));
+    line(533, 202, 533, 599);
+    line(269, 400, 799, 400);
+
+}
+void deseneazaGrid() {
+
+    setcolor(WHITE);
+    for(int y = 200; y <= 600; y += 30) {
+        line(267, y, 800, y);
+    }
+
+    for(int x = 267; x <= 800; x += 30) {
+        line(x, 200, x, 600);
+    }
+}
+
+void backToMenu() {
+
+    setcolor(12);
+    settextstyle(1, 0, 1);
+    rectangle(30, 550, 230, 575);
+    outtextxy(40, 555, "Inapoi la Menu");
+}
+
+
+void zoomInOutButtons() {
+
+
+    outtextxy(600, 120, "ZOOM IN/OUT");
+    setlinestyle(0, 0, 2);
+    rectangle(680, 155, 705, 180);
+    rectangle(710, 155, 735, 180);
+    setcolor(COLOR(51, 115, 123));
+    setlinestyle(0, 0, 3);
+    line(692, 160, 692, 175);
+    line(684, 168, 700, 168);
+    line(714, 168, 730, 168);
+
+}
+
+void deseneazaChenar(){
+
+    setcolor(COLOR(11, 56, 95));
+    settextstyle(4, HORIZ_DIR, 2);
+    outtextxy(20, 90, "Graficul functiei");
+    outtextxy(20, 120, "tale:");
+    deseneazaAxe();
+    backToMenu();
+    deseneazaMargine();
+    zoomInOutButtons();
+
+}
+
+void zoomInOut(Functie F, double& xScale, double& yScale, double zoomFactor) {
+    // Calculeaza minimul si maximul functiei
+    double minY = ValoareFunctie(F, F.a);
+    double maxY = minY;
+
+    for (double x = F.a; x <= F.b; x += 0.1) {
+        double y = ValoareFunctie(F, x);
+        minY = std::min(minY, y);
+        maxY = std::max(maxY, y);
+    }
+
+    //
+    double padding = 0.1;
+    minY -= padding;
+    maxY += padding;
+
+    // Update the scales
+    xScale *= zoomFactor;
+    yScale *= zoomFactor;
+
+    // Clear and redraw the graph with the updated scales
+    cleardevice();
+    deseneazaChenar();
+}
+void reguli() {
+    outtextxy(12, 12, "Ce reguli sa scriu aici???????");
+    backToMenu();
+}
+
+
+void drawSlider(int x, int y, int width, int height, int position) {
+    setcolor(LIGHTGREEN);  // Change the color
+    setfillstyle(SOLID_FILL, LIGHTGREEN);  // Change the fill color
+
+    // Draw a rounded rectangle
+    rectangle(x, y, x + width, y + height);
+    floodfill(x + width / 2, y + height / 2, LIGHTGREEN);
+
+    // Draw the filled part of the slider
+    bar(x, y, x + position, y + height);
+}
+
+void setari() {
+
+    int volumeSliderPosition = 0;
+    bool musicToggleButtonState = true;
+    bool soundToggleButtonState = true;
+
+    settextstyle(6, HORIZ_DIR, 2);
+    outtextxy(320, 50, "Setari");
+
+    settextstyle(1, HORIZ_DIR, 1);
+
+    outtextxy(100, 150, "Muzica:");
+
+    outtextxy(100, 180, "Sunet:");
+
+    outtextxy(100, 300, "Volum:");
+
+    // Draw music toggle button
+     musicToggleButtonState ?
+            outtextxy(480, 150,  "ON"):
+            outtextxy(480, 150,  "OFF");
+
+    // Draw sound toggle button
+    soundToggleButtonState ?
+            outtextxy(480, 180,  "ON"):
+            outtextxy(480, 180,  "OFF");
+    backToMenu();
+
+    rectangle(500, 300, 700, 320);
+    drawSlider(501, 301, 20, 18, volumeSliderPosition);
+
+    // Handle user interactions
+    while (true) {
+        char ch = getch();
+
+        switch (ch) {
+        case 'q':
+            return;  // Quit the program
+        case 'l':
+            // Move the volume slider to the right
+            if (volumeSliderPosition < 200)
+                volumeSliderPosition += 20;
+            break;
+        case 'h':
+            // Move the volume slider to the left
+            if (volumeSliderPosition > 0)
+                volumeSliderPosition -= 20;
+            break;
+        case 'm':
+            // Toggle music button
+            musicToggleButtonState = !musicToggleButtonState;
+            break;
+        case 's':
+            // Toggle sound button
+            soundToggleButtonState = !soundToggleButtonState;
+            break;
+        }
+
+        // Redraw the settings tab after each interaction
+        cleardevice();  // Assuming you have a function to clear the screen
+        setcolor(WHITE);
+        settextstyle(6, HORIZ_DIR, 2);
+        outtextxy(320, 50, "Setari");
+        settextstyle(1, HORIZ_DIR, 1);
+
+        // Redraw music toggle button
+        outtextxy(100, 150, "Muzica:");
+        musicToggleButtonState ?
+            outtextxy(480, 150,  "ON"):
+            outtextxy(480, 150,  "OFF");
+
+        // Redraw sound toggle button
+        outtextxy(100, 180, "Sunet:");
+        soundToggleButtonState ?
+            outtextxy(480, 180,  "ON"):
+            outtextxy(480, 180,  "OFF");
+
+        outtextxy(100, 300, "Volum:");
+
+        backToMenu();
+
+        rectangle(500, 300, 700, 320);
+        drawSlider(501, 301, 20, 19, volumeSliderPosition);
+    }
+}
+
+
+void deseneazaMenu() {
+
+    settextjustify( 0, 2);
+    int mijloc = GetSystemMetrics(SM_CXSCREEN)/2;
+
+    setbkcolor(COLOR(28,33,39));
+    cleardevice();
+
+    settextstyle(0, HORIZ_DIR, 5);
+
+    setcolor(0);
+
+    setfillstyle(SOLID_FILL, COLOR(28,33,39));
+    bar(0, 0, getmaxx(), getmaxy());
+
+    setcolor(WHITE);
+    //desenam titlul proiectului
+    settextstyle(DEFAULT_FONT, HORIZ_DIR, 6);
+    outtextxy(mijloc-140, 50, "Grafic");
+
+    settextstyle(1, 0, 3);
+    //desenam optiunile din meniu
+    rectangle(mijloc - 160, 250, mijloc + 140, 290);
+    outtextxy(mijloc - 150, 260, "Graficul Functiei");
+    rectangle(mijloc - 80, 310, mijloc + 45, 350);
+    outtextxy(mijloc - 70, 320, "Reguli");
+    rectangle(mijloc - 78, 370, mijloc + 38, 410);
+    outtextxy(mijloc - 67, 380, "Setari");
+    rectangle(mijloc - 73, 430, mijloc + 32, 470);
+    outtextxy(mijloc - 63, 440, "Iesire");
+}
+
+void afisareAsimptote(Functie F)
+{
+    int i;
+    double valoare1,valoare2;
+
+    valoare1=ValoareFunctie(F,i);
+    valoare2=ValoareFunctie(F,-i);
+
+    if(fabs(valoare1)>infinit/2.0)
+        std::cout << "Asimptota orizontala la infinit: y = " << valoare1 << "\n";
+    if(fabs(valoare2)>infinit/2.0)
+        std::cout << "Asimptota orizontala la infinit: y = " << valoare2 << "\n";
+
+}
+
+void determinaPuncteMinime(Functie F)
+{
+    double h = 0.0001;
+    double x, df, d2f;
+
+    for (int i = 0; i < F.n; ++i)
+    {
+        x = F.a + i * (F.b - F.a) / (F.n - 1);
+        df = (ValoareFunctie(F, x + h) - ValoareFunctie(F, x - h)) / (2 * h);
+        d2f = (ValoareFunctie(F, x + h) - 2 * ValoareFunctie(F, x) + ValoareFunctie(F, x - h)) / (h * h);
+        if (fabs(df) < epsi && d2f > 0) {
+            std::cout << "Punct de minim la x = " << x << ", y = " << ValoareFunctie(F, x) << "\n";
+        }
+    }
+}
+
+void determinaPuncteMaxime(Functie F)
+{
+    double h = 0.0001;
+    double x, df, d2f;
+    F.n = F.a - F.b;
+
+    for (int i = 0; i < F.n; ++i)
+    {
+        x = F.a + i * (F.b - F.a) / (F.n - 1);
+        df = (ValoareFunctie(F, x + h) - ValoareFunctie(F, x - h)) / (2 * h);
+        d2f = (ValoareFunctie(F, x + h) - 2 * ValoareFunctie(F, x) + ValoareFunctie(F, x - h)) / (h * h);
+        if (fabs(df) < epsi && d2f < 0) {
+            std::cout << "Punct de maxim la x = " << x << ", y = " << ValoareFunctie(F, x) << "\n";
+        }
+    }
+}
+
+
+int main() {
+
+
+    int screen_width = GetSystemMetrics(SM_CXSCREEN);
+    int screen_height = GetSystemMetrics(SM_CYSCREEN);
+
+    Grafic g;
+    g.x1_ecran = 0;
+    g.x2_ecran = screen_width;
+    g.y1_ecran = 0;
+    g.y2_ecran = screen_height;
+
+    Punct minGraf, maxGraf;
+
+
+    initwindow(screen_width, screen_height, "Function Graph");
+    const int numPoints = 800;
+    const double initialXScale = screen_width;
+    const double initialYScale = screen_height;
+
+    double xScale = 1;
+    double yScale = 1;
+
+    Functie F;
+    //           deschidePag min    max salveaza
+    apasat apasat = {true, false, false, false};
+
+    std::ifstream file("function.txt");
+
+    if (file.is_open())
+    {
+        file.getline(F.expresie, sizeof(F.expresie));
+
+        file >> F.a;
+
+        file >> F.b;
+
+        file.close();
+
+        std::cout << "Functia din fisier: " << F.expresie << std::endl;
+
+    } else
+    {
+        outtextxy(350, 290, "Fisierul nu contine nici o functie");
+    }
+
+    strcat(F.expresie, ")");
+    tokenize(F);
+    F.lung = strlen(F.expresie);
+
+    g.x1 = F.a;
+    g.x2 = F.b;
+
+    float dif = (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
+
+    g.y1 = dif/2;
+    g.y2 = g.y1 - (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
+
+
+    minGraf.x = g.x1;
+    minGraf.y = ValoareFunctie(F, minGraf.x);
+
+    maxGraf.x = g.x1;
+    maxGraf.y = ValoareFunctie(F, maxGraf.x);
+    cleardevice();
+    deseneazaMenu();
+    while (!kbhit()) {
+        if (ismouseclick(WM_LBUTTONDOWN)) {
+            getmouseclick(WM_LBUTTONDOWN, x, y);
+
+            switch (fereastraDeschisa) {
+                case MENIU:
+                    // Se deschide fereastra Grafic
+                    if (x >= (screen_width/2 - 160) && x <= (screen_width/2 + 140) && y >= 250 && y <= 290) {
+
+                        fereastraDeschisa = GRAFIC;
+                        cleardevice();
+                        deseneazaGrafic(g, F, minGraf, maxGraf);
+                        draw_buttons(g, apasat, projectpath);
+
+                        delay(200);
+                    //Se deschide ferestra Reguli
+                    } else if (x >= (screen_width/2 - 80) && x <= (screen_width/2 + 45) && y >= 310 && y <= 350) {
+
+                        fereastraDeschisa = REGULI;
+                        cleardevice();
+                        reguli();
+                    //Se deschide fereastra Setari
+                    } else if (x >= (screen_width/2 - 78) && x <= (screen_width/2 + 38) && y >= 370 && y <= 410) {
+
+                        fereastraDeschisa = SETARI;
+                        cleardevice();
+                        setari();
+                    //Se iese din program prin apasarea buttonului iesire
+                    } else if (x >= (screen_width/2 - 73) && x <= (screen_width/2 + 32) && y >= 430 && y <= 470) {
+
+                        closegraph();
+                        std::cout << "Iesire button clicked! Exiting..." << std::endl;
+                        return 0;
+                    }
+                    break;
+
+                case GRAFIC:
+                    // Handle clicks in the graphic window
+                    if (x >= 30 && x <= 210 && y >= 550 && y <= 570) {
+                        fereastraDeschisa = MENIU;
+                        cleardevice();
+                        deseneazaMenu();
+                    }
+                    break;
+                case REGULI:
+                    if (x >= 30 && x <= 210 && y >= 550 && y <= 570) {
+                        fereastraDeschisa = MENIU;
+                        cleardevice();
+                        deseneazaMenu();
+                    }
+                    break;
+                    case INTERESANT:
+                    if (x >= 30 && x <= 210 && y >= 550 && y <= 570) {
+                        fereastraDeschisa = MENIU;
+                        cleardevice();
+                        deseneazaMenu();
+                    }
+                    break;
+                // Add cases for other windows
+                case SETARI:
+                    if (x >= 30 && x <= 210 && y >= 550 && y <= 570) {
+                        fereastraDeschisa = MENIU;
+                        cleardevice();
+                        deseneazaMenu();
+                    }
+                    break;
+
+
+                default:
+                    break;
+            }
+
+            clearmouseclick(WM_LBUTTONDOWN);
+        }
+}
+
+    delay(20000);
+    closegraph();
+    return 0;
+}

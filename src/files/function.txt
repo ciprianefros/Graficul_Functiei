@@ -1,0 +1,2 @@
+(sin(cos(sin(x))))+sin(cos(abs(x)))
+

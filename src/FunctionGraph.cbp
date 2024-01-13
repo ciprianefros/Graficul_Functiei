@@ -32,7 +32,9 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="function.txt" />
+		<Unit filename="files/function.txt" />
+		<Unit filename="files/limba.txt" />
+		<Unit filename="files/numFunctions.txt" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
