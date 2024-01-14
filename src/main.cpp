@@ -36,7 +36,7 @@ char Operatii[200]="+-*/^sctbdfghnarel<>=#";
 char Cifre[13]="0123456789qx";
 char Caractere_Nepermise[300]="!@#$%&;'_[]{},~`\|""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-char limba = 'e';
+char limba;
 int numFunctions;
 char nrFunctii[5];
 
@@ -49,7 +49,7 @@ const float pi=3.1415926; // se da sub forma literei q
 int x, y;
 //Variabile booleene care verifica daca se pot desena asimptotele
 bool deseneazaAsimptote = false;
-bool d_asy;
+bool existaAsimptote = false;
 //Structura care defineste functia, avand ca elemente: expresia functiei, vectorul de tokens, lungimea vectorului, intervalul de evaluare,
 struct Functie
 {
@@ -317,7 +317,7 @@ float arcctg(float x)
 }
 
 
-void Cuvinte(char expr[MAX])
+void tokenize(char expr[MAX])
 {
     char s[MAX];
     int k,i,ok;
@@ -763,7 +763,7 @@ void deseneazaAxe(Grafic g)
             bare.y = 0;
             if(bare.x != 0)
             {
-                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%10 == 0) || (abs(g.x1-g.x2) >= 100 && i%15 == 0))
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 60 && i%5 == 0) ||(abs(g.x1-g.x2) >= 60 && abs(g.x1-g.x2) < 100 && i%10 == 0) || (abs(g.x1-g.x2) >= 100 && i%15 == 0))
                 {
 
                 bare = translate(bare, g);
@@ -786,7 +786,7 @@ void deseneazaAxe(Grafic g)
             bare.y = i;
             if(bare.y != 0)
             {
-                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 100 && i%10 == 0) || (abs(g.x1-g.x2) >= 100 && i%15 == 0))
+                if( (abs(g.x1-g.x2) < 30) ||(abs(g.x1-g.x2) >= 30 && abs(g.x1-g.x2) < 60 && i%5 == 0) || (abs(g.x1-g.x2) >= 60 && abs(g.x1-g.x2) < 100 && i%10 == 0) ||(abs(g.x1-g.x2) >= 100 && i%15 == 0))
                 {
                 bare = translate(bare, g);
                 bar(origine.x - 3, bare.y + 1, origine.x + 3, bare.y - 1);
@@ -816,13 +816,12 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
 
     float diferentaPuncte = 0.05;
 
-    d_asy = false;
     // se verifica daca expresia contine una din functiile de mai jos, pentru a vedea daca are asimptote sau nu
     for(int i=0; i < functionGraph.F.lung; ++i)
     {
         if(strcmp(functionGraph.F.vect[i],"btg")==0 || strcmp(functionGraph.F.vect[i],"tg")==0 || functionGraph.F.vect[i][0]=='/' || strcmp(functionGraph.F.vect[i],"ln")==0)
         {
-            d_asy = true;
+            existaAsimptote = true;
             diferentaPuncte = 0.005;
         }
         if(strcmp(functionGraph.F.vect[i],"drcsin")==0 || strcmp(functionGraph.F.vect[i],"frccos")==0)
@@ -945,7 +944,7 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
                     line(int(p1t.x), int(p1t.y), int(p2t.x), int(p2t.y));
                 else if (deseneazaAsimptote)
                 {
-                    setcolor(COLOR(11,56,95));
+                    setcolor(COLOR(0, 191, 254));
                     line(p1t.x - 2 , g.y2_ecran, p1t.x - 2, g.y1_ecran);
                     setcolor(COLOR(functionGraph.culoareR, functionGraph.culoareG, functionGraph.culoareB));
                 }
@@ -1047,15 +1046,16 @@ void deseneazaButoane(const Grafic& g, apasat& apasat, char projectpath[])
     {
         strcpy(text, "Save");
     }
+    //butonul pentru salveaza
+    bar(g.x1_ecran + 17, g.y1_ecran + 70, g.x1_ecran + 117, g.y1_ecran + 110);
+    outtextxy(g.x1_ecran + 67, 75, text);
 
-    bar(g.x1_ecran + 200, g.y1_ecran + 20, g.x1_ecran + 300, g.y1_ecran + 60);
-    outtextxy(g.x1_ecran + 250, 25, text);
-
+    //butonul de zoomIn
     settextstyle(10, HORIZ_DIR, 5);
     bar(g.x2_ecran - 90, g.y1_ecran + 82, g.x2_ecran - 46, g.y1_ecran + 38);
     outtextxy(g.x2_ecran - 67, g.y1_ecran + 40, "+");
 
-
+    //butonul de zoomOut
     bar(g.x2_ecran - 90, g.y1_ecran + 132, g.x2_ecran - 46, g.y1_ecran + 88);
     outtextxy(g.x2_ecran - 67, g.y1_ecran + 90, "-");
 
@@ -1072,6 +1072,7 @@ void deseneazaButoane(const Grafic& g, apasat& apasat, char projectpath[])
         setbkcolor(COLOR(3, 57, 108));
     }
 
+    //butonul pentru Minimul global functiei
     bar(g.x1_ecran + 20, g.y2_ecran - 80, g.x1_ecran + 80, g.y2_ecran - 40);
     outtextxy(g.x1_ecran + 50, g.y2_ecran - 75, "MIN");
 
@@ -1086,10 +1087,12 @@ void deseneazaButoane(const Grafic& g, apasat& apasat, char projectpath[])
         setbkcolor(COLOR(3, 57, 108));
     }
 
+    //butonul pentru Maximul global functiei
     bar(g.x1_ecran + 100, g.y2_ecran - 80, g.x1_ecran + 160, g.y2_ecran - 40);
     outtextxy(g.x1_ecran + 130, g.y2_ecran - 75, "MAX");
 
-    if(d_asy)
+    //mai intai se verifica daca functie permite asimptote verticale, iar mai apoi daca a fost apasat butonul de asimptote
+    if(existaAsimptote)
     {
         if(deseneazaAsimptote)
         {
@@ -1113,12 +1116,14 @@ void deseneazaButoane(const Grafic& g, apasat& apasat, char projectpath[])
     else if(limba == 'e')
         strcpy(text, "ASYMPTOTES");
 
+    //butonul pentru asimptote
     bar(g.x2_ecran - 206, g.y2_ecran - 80, g.x2_ecran - 46, g.y2_ecran - 40);
     outtextxy(g.x2_ecran - 126, g.y2_ecran - 75, text);
     setbkcolor(COLOR(28,33,39));
 
 }
 
+//functie care verifica daca mouse-ul a fost apasat in interiorul unui buton
 bool esteApasat(coordonateButon buton, int x, int y)
 {
     if(x > buton.x1 && x < buton.x2 && y > buton.y1 && y < buton.y2)
@@ -1128,13 +1133,13 @@ bool esteApasat(coordonateButon buton, int x, int y)
 
 bool apasaPeButton(Grafic& g, int x, int y, bool& d, apasat& apasat)
 {
-    static coordonateButon backToMenuButton = {g.x1_ecran + 17, g.y1_ecran + 25, g.x1_ecran + 165, g.y1_ecran + 60};
-    static coordonateButon salveaza = {g.x1_ecran + 200, g.y1_ecran + 20, g.x1_ecran + 300, g.y1_ecran + 60};
-    static coordonateButon minim = {g.x1_ecran + 20, g.y2_ecran - 80, g.x1_ecran + 80, g.y2_ecran - 40};
-    static coordonateButon maxim = {g.x1_ecran + 100, g.y2_ecran - 80, g.x1_ecran + 160, g.y2_ecran - 40};
-    static coordonateButon zoomOut = {g.x2_ecran - 90, g.y1_ecran + 88, g.x2_ecran - 46, g.y1_ecran + 132};
-    static coordonateButon zoomIn = {g.x2_ecran - 90, g.y1_ecran + 38, g.x2_ecran - 46, g.y1_ecran + 82};
-    static coordonateButon asimptote = {g.x2_ecran - 206, g.y2_ecran - 80, g.x2_ecran - 46, g.y2_ecran - 40};
+    const coordonateButon backToMenuButton = {g.x1_ecran + 17, g.y1_ecran + 25, g.x1_ecran + 165, g.y1_ecran + 60};
+    const coordonateButon salveaza = {g.x1_ecran + 17, g.y1_ecran + 70, g.x1_ecran + 117, g.y1_ecran + 110};
+    const coordonateButon minim = {g.x1_ecran + 20, g.y2_ecran - 80, g.x1_ecran + 80, g.y2_ecran - 40};
+    const coordonateButon maxim = {g.x1_ecran + 100, g.y2_ecran - 80, g.x1_ecran + 160, g.y2_ecran - 40};
+    const coordonateButon zoomOut = {g.x2_ecran - 90, g.y1_ecran + 88, g.x2_ecran - 46, g.y1_ecran + 132};
+    const coordonateButon zoomIn = {g.x2_ecran - 90, g.y1_ecran + 38, g.x2_ecran - 46, g.y1_ecran + 82};
+    const coordonateButon asimptote = {g.x2_ecran - 206, g.y2_ecran - 80, g.x2_ecran - 46, g.y2_ecran - 40};
 
     if(esteApasat(backToMenuButton, x, y))
     {
@@ -1153,6 +1158,7 @@ bool apasaPeButton(Grafic& g, int x, int y, bool& d, apasat& apasat)
         if(g.x1 + 3 < g.x2)
         {
             cleardevice();
+            //factorul de zoom, intre 0-30 e 1, intre 30-60 e 2, si dupa e 5
             float n = ((g.x2 - g.x1) >= 30? ((g.x2 - g.x1) >= 60? 5 : 2 ): 1);
             g.x1 += n;
             g.x2 -= n;
@@ -1168,6 +1174,7 @@ bool apasaPeButton(Grafic& g, int x, int y, bool& d, apasat& apasat)
         if((g.x2 - g.x1) <= 250 && g.x2 <= 200 && g.x1 >= -200 && g.y1 <= 150 && g.y2 >= -150)
         {
             cleardevice();
+            //factorul de zoom, intre 0-30 e 1, intre 30-60 e 2, si dupa e 5
             float n = ((g.x2 - g.x1) >= 30? ((g.x2 - g.x1) >= 60? 5 : 2 ): 1);
             g.x1 -= n;
             g.x2 += n;
@@ -1502,7 +1509,17 @@ void Verificare_Tipuri(char v[MAX][MAX1 + 1], int tip[MAX], int lungime)
                         Eroare_Tip(i, v[i], v[i + 1]);
                         continue;
                     }
+                    if (tip[i + 2] != 7 || strlen(v[i + 2]) != 1 || v[i + 2][0] != 'x')
+                    {
+                        // Dacă următorul token nu este 'x' după o cifră, afișăm eroarea
+                        Eroare_Tip(i, v[i], v[i + 2]);
+                        continue;
+                    }
                 }
+                else  Eroare_Tip(i,v[i],v[i+1]);
+
+
+
             }
             else if (tip[i] == 7 && (tip[i + 1] == 1 || tip[i + 1] == 5 || tip[i + 1] == 7 || tip[i + 1] == -1)) /*char tip_litere[3]="xq" */
                 Eroare_Tip(i, v[i], v[i + 1]);
@@ -1710,43 +1727,45 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
     // Partea pentru afisarea mesajului despre interval
     settextstyle(10, HORIZ_DIR, 4);
     setcolor(15);
+    if (nrFunctie == 0) {
 
-    if (limba == 'r')
-        sprintf(text, "Fixati intervalul de reprezentare pentru functia %d: [a, b]", nrFunctie + 1 );
-    else if (limba == 'e')
-        sprintf(text, "Set the representation range for function %d: [a, b]", nrFunctie + 1 );
+        if (limba == 'r')
+            sprintf(text, "Fixati intervalul de reprezentare al functiilor: [a, b]");
+        else if (limba == 'e')
+            sprintf(text, "Set the representation range for all functions: [a, b]");
 
-    int width3 = textwidth(text);
-    outtextxy((screen_width-width3)/2, 210+height, text);
-    height += textheight(text);
+        int width3 = textwidth(text);
+        outtextxy((screen_width-width3)/2, 210+height, text);
+        height += textheight(text);
 
 
-    settextstyle(10, HORIZ_DIR, 5);
+        settextstyle(10, HORIZ_DIR, 5);
 
-    //Partea cu introducerea valorii lui a
-    setcolor(15);
-    if(a_pressed)
-        setlinestyle(0, USERBIT_LINE, 3);
-    else
-        setlinestyle(0, USERBIT_LINE, 1);
+        //Partea cu introducerea valorii lui a
+        setcolor(15);
+        if(a_pressed)
+            setlinestyle(0, USERBIT_LINE, 3);
+        else
+            setlinestyle(0, USERBIT_LINE, 1);
 
-    int width4 = textwidth("a= ");
-    outtextxy( (screen_width - width3)/2 + 100, 250+height, "a= ");
-    rectangle( (screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height);
+        int width4 = textwidth("a= ");
+        outtextxy( (screen_width - width3)/2 + 100, 250+height, "a= ");
+        rectangle( (screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height);
 
-    chenarA = {(screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height};
+        chenarA = {(screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height};
 
-    //Partea cu introducerea valorii lui b
-    if(b_pressed)
-        setlinestyle(0, USERBIT_LINE, 3);
-    else
-        setlinestyle(0, USERBIT_LINE, 1);
+        //Partea cu introducerea valorii lui b
+        if(b_pressed)
+            setlinestyle(0, USERBIT_LINE, 3);
+        else
+            setlinestyle(0, USERBIT_LINE, 1);
 
-    int width5 = textwidth("b= ");
-    outtextxy( (screen_width + width3)/2 - 220 - width5, 250+height, "b= ");
-    rectangle((screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height);
+        int width5 = textwidth("b= ");
+        outtextxy( (screen_width + width3)/2 - 220 - width5, 250+height, "b= ");
+        rectangle((screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height);
 
-    chenarB = {(screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height};
+        chenarB = {(screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height};
+    }
 
     //Erori
     setcolor(15);
@@ -1792,7 +1811,7 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
     strcpy(text, "function.txt");
     outtextxy((screen_width - 304), 538 + height, text);
 
-    chenarFisier = {(screen_width-310), 525+height, (screen_width-140), 575+height};
+    chenarFisier = {(screen_width-310), 525 + height, (screen_width-130), 575 + height};
 
     //Butonul de desenare
     if (limba == 'r')
@@ -2077,8 +2096,12 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
                 setcolor(15);
                 settextstyle(3, 0, 5);
                 outtextxy( functie.x1 + 5, functie.y1 + 10, f_expresie);
-                outtextxy( chenarA.x1 + 5, chenarA.y1 + 10, a);
-                outtextxy( chenarB.x1 + 5, chenarB.y1 + 10, b);
+                if(nrFunctie == 0)
+                {
+                    outtextxy( chenarA.x1 + 5, chenarA.y1 + 10, a);
+                    outtextxy( chenarB.x1 + 5, chenarB.y1 + 10, b);
+
+                }
 
                 setactivepage(page);
                 setvisualpage(page == 3? 4 : 3);
@@ -2091,6 +2114,7 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
     }
 }
 void reguli() {
+    //textul pentru limba engleza
     if (limba == 'e')
     {
         cleardevice();
@@ -2157,10 +2181,16 @@ void reguli() {
         outtextxy(col3_x, current_y, "   - x^2 + 5*x, for x < n");
         current_y += 30;
         outtextxy(col3_x, current_y, "   - cos(x), for x > n");
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - sin(x)+cos(x)+12");
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - x^2+12*x+6");
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - sin(x)*abs(x)");
 
         backToMenu();
     }
-    else if (limba == 'r')
+    else if (limba == 'r') // textul pentru limba romana
     {
         cleardevice();
         settextstyle(BOLD_FONT, HORIZ_DIR, 6);
@@ -2225,8 +2255,12 @@ void reguli() {
         outtextxy(col3_x, current_y, "   - x^2 + 5*x, pentru x < n");
         current_y += 30;
         outtextxy(col3_x, current_y, "   - cos(x), pentru x > n");
-
-
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - sin(x)+cos(x)+12");
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - x^2+12*x+6");
+        current_y += 30;
+        outtextxy(col3_x, current_y, "   - sin(x)*abs(x)");
 
         backToMenu();
     }
@@ -2271,6 +2305,7 @@ void read_reguli_page()
 
 
 void setari() {
+
     cleardevice();
     setcolor(WHITE);
 
@@ -2351,8 +2386,6 @@ void setari() {
 void read_setari_page()
 {
     int page = 3;
-    //int ac_page = getactivepage();
-    //int vs_page = getvisualpage();
 
     setactivepage(page);
     setvisualpage(page);
@@ -2414,10 +2447,6 @@ void read_setari_page()
             else if(esteApasat(chenarBackButton, x, y))
             {
 
-                //nrFunctii[0] = c;
-                //nrFunctii[1] = '\0';
-                //numFunctions = stoi(nrFunctii);
-                //scrieFisier(nrFunctii, "numFunctions.txt");
                 return;
             }
             else if(esteApasat(chenarSalveaza, x, y))
@@ -2830,6 +2859,11 @@ int main() {
     int page = 0;
     //se pregateste drumul spre fisiere, returnanduse un pointer la buffer, si punandu-se in projectpath
     getcwd(projectpath, sizeof(projectpath));
+    //preluam limba din fisier
+    char lim[2] = " ";
+    citesteFisier(lim, "limba.txt");
+    lim[1] = '\0';
+    limba = lim[0];
 
     initwindow(screen_width, screen_height, "Function Graph");
 
@@ -2844,7 +2878,6 @@ int main() {
     bool d = true;
 
     bool f_ok = true;
-
     while(true)
     {
         if(meniu)
@@ -2855,10 +2888,10 @@ int main() {
         }
         if(apasat.citesteFunctie)
         {
-
             apasat.citesteFunctie = false;
 
             for(int i = 0; i < numFunctions; i++) {
+
                 read_paginaCitesteFunctie(functionGraphs[i].F, meniu, f_ok, i);
 
                 if(meniu) {
@@ -2869,7 +2902,7 @@ int main() {
 
                 Elimin_Spatii(functionGraphs[i].F.expresie);
 
-                Cuvinte(functionGraphs[i].F.expresie);
+                tokenize(functionGraphs[i].F.expresie);
                 Adaugare_Vector(functionGraphs[i].F);
 
                 Codificare_Fct_Trigonometrice(functionGraphs[i].F);
@@ -2882,14 +2915,15 @@ int main() {
 
                 if(!Expresie_Corecta(functionGraphs[i].F,x))
                 {
-                    apasat.citesteFunctie = true;
+                    if(i >= 0)
+                        i--;
                     f_ok = false;
                     continue;
                 }
 
                 //pregatire coordonate grafic
-                g.x1 = functionGraphs[i].F.a;
-                g.x2 = functionGraphs[i].F.b;
+                g.x1 = functionGraphs[0].F.a;
+                g.x2 = functionGraphs[0].F.b;
 
                 float dif = (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
 
@@ -2948,7 +2982,6 @@ int main() {
 
                 deseneazaGrafic(g, functionGraphs[i]);
                 deseneazaMinMax(g, functionGraphs[i].minGraf, functionGraphs[i].maxGraf, apasat.minimGraf, apasat.maximGraf);
-
             }
 
             deseneazaButoane(g, apasat, projectpath);
