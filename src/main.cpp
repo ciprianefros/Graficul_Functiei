@@ -26,7 +26,7 @@ double Opd[max_stiva]; // stiva operanzilor
 char Op[max_stiva]; // stiva operatorilor
 
 
-char projectpath[100];//= "D:\\FII\\Semestrul I\\Introducere în programare\\Proiect_IP_Function_Graph\\src";
+char projectpath[100];
 
 
 char Alfabet[200]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -50,6 +50,7 @@ int x, y;
 //Variabile booleene care verifica daca se pot desena asimptotele
 bool deseneazaAsimptote = false;
 bool existaAsimptote = false;
+
 //Structura care defineste functia, avand ca elemente: expresia functiei, vectorul de tokens, lungimea vectorului, intervalul de evaluare,
 struct Functie
 {
@@ -98,7 +99,7 @@ FunctionGraph functionGraphs[10];
 
 //coordonate pentru chenarele din interiorul programului
 coordonateButon functie, chenarA, chenarB, chenarDeseneaza, chenarFisier, chenarBackButton, chenarGrafic, chenarReguli, chenarSetari, chenarFlag, chenarSalveaza, chenarIesire, chenarNrFunctii;
-bool func_pressed, a_pressed, b_pressed, nrFunctii_pressed;
+bool apasatFunc, apasatA, apasatB, apasatNrFunctii;
 
 
 //verific daca sirul de caractere este numar
@@ -107,7 +108,7 @@ bool EsteNumar(char s[100])
     return (strchr("-+0123456789",s[0]) && atof(s)!=0.0); //converteste din string in double
 }
 
-int Prioritate(char c)  // prioritate operatorilor
+int Prioritate_Operatori(char c)  // prioritate operatorilor
 {
     if(c=='(' || c==')')
         return 0;
@@ -341,7 +342,7 @@ void tokenize(char expr[MAX])
                     s[k++]='*';
                     s[k++]=' ';
                     if((strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.' ) &&
-                            strchr(OperatiiBinare,expr[i+1])==NULL && expr[i+1]!=')' && expr[i+1]!=NULL)
+                            strchr(OperatiiBinare,expr[i+1])==NULL && expr[i+1]!=')' && expr[i+1]!=NULL) // se ocupa de cifrele consecutive sau de cele care contin '.', adaugand spatii intre ele
                     {
                         while((strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.') &&
                             strchr(OperatiiBinare,expr[i+1])==NULL && expr[i+1]!=')' && expr[i+1]!=NULL)
@@ -518,13 +519,13 @@ double ValoareFunctie(Functie F, double x)
     double val,x1,x2;
     for (i=1; i<=max_stiva; i++)
     {
-        Opd[i]=0;
-        Op[i]='@';
+    Opd[i]=0; // initializeaza operandul la 0
+    Op[i]='@'; // '@' poate reprezenta un marcator special sau o stare vida in stiva de operatori
     }
-    top1=0;
-    top2=1;
-    Op[top2]='(';
-    i=0;
+    top1=0; // varful stivei Opd (operand) - valori numerice
+    top2=1; // varful stivei Op (operator) - de calcul
+    Op[top2]='('; // in stiva de operatori se adauga o paranteza de inceput
+    i=0; // reseteaza variabila de iteratie
     while(i<=F.lung && top2>0)
     {
         i++;
@@ -536,7 +537,7 @@ double ValoareFunctie(Functie F, double x)
         }
         else
             switch (F.vect[i][0])///daca numarul e reprezentat de unul din
-                              ///caracterele q:=(pi=3.1415926) sau X -> pun in stiva operanzilor
+                              ///caracterele q:=(pi=3.1415926) sau x -> pun in stiva operanzilor
             {
                 case 'q': top1++;
                           Opd[top1]=pi;
@@ -549,7 +550,7 @@ double ValoareFunctie(Functie F, double x)
                           break;
                 default: ///daca in varful stivei operatorilor se afla un operator binar sau unar (altfel spus, nu e '(' sau ')' )
                    while( (top2>0) && !(strchr("()",Op[top2])) &&
-                           Prioritate(Op[top2]) >= Prioritate(F.vect[i][0]) )
+                           Prioritate_Operatori(Op[top2]) >= Prioritate_Operatori(F.vect[i][0]) )
                     {
                         if (top1>1) ///daca am un operator ce implica doi operanzi
                             x1=Opd[top1-1]; ///primul operand
@@ -739,6 +740,7 @@ void deseneazaAxe(Grafic g)
     Punct origine;
     origine.x = 0;
     origine.y = 0;
+
     // se adapteaza la fereastra programului
     origine = translate(origine, g);
 
@@ -750,11 +752,12 @@ void deseneazaAxe(Grafic g)
         line(g.x1_ecran, origine.y, g.x2_ecran, origine.y);
 
     Punct bare;
-    setfillstyle(1, 0);
+    setfillstyle(1, COLOR(240,236,235));
     settextjustify( 1, 2);
 
     char str[20];
 
+    //se deseneaza barele pe axa Ox
     if(origine.y > g.y1_ecran && origine.y < g.y2_ecran)
     {
         for (int i = g.x1; i < g.x2; ++i)
@@ -777,7 +780,7 @@ void deseneazaAxe(Grafic g)
         }
     }
 
-
+    //se deseneaza barele pe axa Oy
     if(origine.x > g.x1_ecran && origine.x < g.x2_ecran)
     {
         for (int i = g.y2; i < g.y1; ++i)
@@ -803,7 +806,6 @@ void deseneazaAxe(Grafic g)
 void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
 {
     setbkcolor(COLOR(28,33,39));
-    //cleardevice();
 
     settextstyle(0, HORIZ_DIR, 2);
 
@@ -830,9 +832,9 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
         }
     }
 
-    //min - max
+    //
 
-    static bool alege_min = true, alege_max = true;
+    bool alege_min = true, alege_max = true;
 
     if(functionGraph.minGraf.x < g.x1 || functionGraph.minGraf.x > g.x2 ||(functionGraph.minGraf.y < g.y2 || functionGraph.minGraf.y > g.y1) || isnan(functionGraph.minGraf.y))
     {
@@ -892,10 +894,11 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
     }
 
     // desenarea propriu zisa a graficului
-    Punct p1t, p2t;
+    Punct p1e, p2e;
 
     setlinestyle(0, USERBIT_LINE, 3);
     setcolor(COLOR(functionGraph.culoareR, functionGraph.culoareG, functionGraph.culoareB));
+
     while(p1.x <= g.x2)
         {
         p2.x = p1.x;
@@ -903,8 +906,8 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
         p1.x += diferentaPuncte;
         p1.y = ValoareFunctie(functionGraph.F,p1.x);
 
-        p1t = translate(p1, g);
-        p2t = translate(p2, g);
+        p1e = translate(p1, g);
+        p2e = translate(p2, g);
 
         if(p1.y > g.y2 && p1.y < g.y1)
         {
@@ -941,11 +944,11 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
                 }
 
                 if(abs(p1.y - p2.y) < 200)
-                    line(int(p1t.x), int(p1t.y), int(p2t.x), int(p2t.y));
+                    line(int(p1e.x), int(p1e.y), int(p2e.x), int(p2e.y));
                 else if (deseneazaAsimptote)
                 {
                     setcolor(COLOR(0, 191, 254));
-                    line(p1t.x - 2 , g.y2_ecran, p1t.x - 2, g.y1_ecran);
+                    line(p1e.x - 2 , g.y2_ecran, p1e.x - 2, g.y1_ecran);
                     setcolor(COLOR(functionGraph.culoareR, functionGraph.culoareG, functionGraph.culoareB));
                 }
             }
@@ -957,7 +960,7 @@ void deseneazaGrafic(Grafic g, FunctionGraph &functionGraph)
     settextstyle(0, HORIZ_DIR, 2);
 }
 
-void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool draw_min, bool draw_max)
+void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool deseneazaMin, bool deseneazaMax)
 {
     setlinestyle(0, USERBIT_LINE, 3);
     settextjustify(CENTER_TEXT, TOP_TEXT);
@@ -978,7 +981,7 @@ void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool dra
     Punct minGraficEcran = translate(minGrafic, g);
 
     setcolor(COLOR(255, 170, 29));
-    if(draw_min && !isnan(minGraficEcran.y)) {
+    if(deseneazaMin && !isnan(minGraficEcran.y)) {
         circle(minGraficEcran.x, minGraficEcran.y , 10);
         /*line(minGraficEcran.x, minGraficEcran.y, minGraficEcran.x, minGraficEcran.y + 10);
         char minPoint[] = "MIN(";
@@ -990,10 +993,12 @@ void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool dra
         strcat(minPoint, ")");
         outtextxy(minGraficEcran.x, minGraficEcran.y + 10, minPoint);*/
     }
+
     //desenare maxim
     Punct maxGraficEcran = translate(maxGrafic, g);
+
     setcolor(COLOR(8, 232, 222));
-    if(draw_max && !isnan(maxGraficEcran.y))
+    if(deseneazaMax && !isnan(maxGraficEcran.y))
     {
         circle(maxGraficEcran.x, maxGraficEcran.y, 10);
         /*line(maxGraficEcran.x, maxGraficEcran.y, maxGraficEcran.x, maxGraficEcran.y - 10);
@@ -1008,8 +1013,6 @@ void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool dra
     }
     setbkcolor(COLOR(28,33,39));
 }
-
-
 
 void deseneazaButoane(const Grafic& g, apasat& apasat, char projectpath[])
 {
@@ -1300,19 +1303,21 @@ void Eroare_Tip(int pozitia, char tip_1[], char tip_2[])
         char d[8]=": Dupa ";
         char n[16]=" nu poate urma ";
         strcpy(a[++poz],"EROARE la pozitia ");
+        // Convertim numarul la sir de caractere si il adaugam la mesaj
         itoa(pozitia,charValue,10);
+        // Adauga la mesajul de eroare numarul pozitiei
         for( int l=0 ;l<strlen(charValue);l++)
             a[poz][strlen("EROARE la pozitia")+ 1 + l]=charValue[l];
-
+        // Adauga "Dupa " la mesajul de eroare
         for( int l=0 ;l<strlen(d);l++)
             a[poz][strlen("EROARE la pozitia")+ strlen(charValue)+1+l]=d[l];
-
+        // Adauga primul tip de caracter la mesajul de eroare
         for( int l=0 ;l<strlen(tip_1);l++)
             a[poz][strlen("EROARE la pozitia") + strlen(charValue)+strlen(d)+ l + 1]=tip_1[l];
-
+        // Adauga " nu poate urma " la mesajul de eroare
         for( int l=0 ;l<strlen(n);l++)
             a[poz][strlen("EROARE la pozitia")+ strlen(charValue) + strlen(d) + strlen(tip_1) + l + 1]=n[l];
-
+        // Adauga al doilea tip de caracter la mesajul de eroare
         for( int l=0 ;l<=strlen(tip_2);l++)
             a[poz][strlen("EROARE la pozitia") + strlen(charValue) + strlen(d) + strlen(tip_1) + strlen(n) + l + 1]=tip_2[l];
     }
@@ -1322,6 +1327,7 @@ void Eroare_Tip(int pozitia, char tip_1[], char tip_2[])
         char d[8]=": ";
         char n[]=" cannot be followed by ";
         strcpy(a[++poz],"ERROR at position ");
+
         itoa(pozitia,charValue,10);
         for( int l=0 ;l<strlen(charValue);l++)
             a[poz][strlen("ERROR at position")+ 1 + l]=charValue[l];
@@ -1381,15 +1387,18 @@ void Eroare_Brusc(int pozitia, char tip_1[])
         char d[8]=": Dupa ";
         char n[30]=" expresia se termina brusc";
         strcpy(a[++poz],"EROARE la pozitia ");
+        // Convertim numarul la sir de caractere si il adaugam la mesaj
         itoa(pozitia,charValue,10);
+        // Adauga la mesajul de eroare numarul pozitiei
         for( int l=0 ;l<strlen(charValue);l++)
             a[poz][strlen("EROARE la pozitia")+ 1 + l]=charValue[l];
+        // Adauga "Dupa " la mesajul de eroare
         for( int l=0 ;l<strlen(d);l++)
             a[poz][strlen("EROARE la pozitia")+ strlen(charValue)+1+l]=d[l];
-
+        // Adauga tipul de caracter la mesajul de eroare
         for( int l=0 ;l<strlen(tip_1);l++)
             a[poz][strlen("EROARE la pozitia") + strlen(charValue)+strlen(d)+ l + 1]=tip_1[l];
-
+        // Adauga " expresia se termina brusc " la mesajul de eroare
         for( int l=0 ;l<=strlen(n);l++)
             a[poz][strlen("EROARE la pozitia")+ strlen(charValue) + strlen(d) + strlen(tip_1) + l + 1]=n[l];
     }
@@ -1420,18 +1429,18 @@ void Eroare_Nepermis(int pozitia, char tip_1[])
         char charValue[10] ="" ;
         char e[30]=" este un caracter nepermis";
         strcpy(a[++poz],"EROARE la pozitia ");
-
+        // Convertim numarul la sir de caractere si il adaugam la mesaj
         itoa(pozitia,charValue,10);
 
         for( int l=0 ;l<strlen(charValue);l++)
             a[poz][strlen("EROARE la pozitia")+ 1 + l]=charValue[l];
-
+        // Adaugam separatorul ':' si un spatiu in mesaj
         a[poz][strlen("EROARE la pozitia")+ strlen(charValue) + 1]=':';
         a[poz][strlen("EROARE la pozitia")+ strlen(charValue) + 2]=' ';
-
+        // Adaugam tipul de caracter la mesaj
         for( int l=0 ;l<strlen(tip_1);l++)
             a[poz][strlen("EROARE la pozitia") + strlen(charValue)+ 2 + l + 1]=tip_1[l];
-
+        // Adaugam la mesajul de eroare mesajul specific tipului de eroare (`e`)
         for( int l=0 ;l<=strlen(e);l++)
             a[poz][strlen("EROARE la pozitia")+ strlen(charValue) + 2+ strlen(tip_1) + l + 1]=e[l];
     }
@@ -1440,7 +1449,7 @@ void Eroare_Nepermis(int pozitia, char tip_1[])
         char charValue[10] ="" ;
         char e[30]=" is a forbidden character";
         strcpy(a[++poz],"ERROR at position ");
-
+        // Convertim numarul la sir de caractere si il adaugam la mesaj
         itoa(pozitia,charValue,10);
 
         for( int l=0 ;l<strlen(charValue);l++)
@@ -1489,7 +1498,7 @@ void Verificare_Tipuri(char v[MAX][MAX1 + 1], int tip[MAX], int lungime)
             }
             else if (tip[i] == 6 && (tip[i + 1] == 1 || tip[i + 1] == 5 || tip[i + 1] == 7 || tip[i + 1] == -1)) /*tip_cifre[14]="0123456789"*/
             {
-                // Verificăm dacă tipul curent este număr și următorul caracter nu este cifră
+                // Verificam daca tipul curent este numar si urmatorul caracter nu este cifra
                 if (strstr(v[i], ".") != nullptr)
                 {
                     int lungime_v = strlen(v[i]);
@@ -1497,21 +1506,21 @@ void Verificare_Tipuri(char v[MAX][MAX1 + 1], int tip[MAX], int lungime)
 
                     if (pozitie_punct == lungime_v - 1 || !isdigit(v[i][pozitie_punct + 1]))
                     {
-                        // Punctul este ultimul caracter în șir, deci eroare
+                        // Punctul este ultimul caracter in sir, deci eroare
                         Eroare_Tip(i, v[i], v[i + 1]);
                         continue;
                     }
 
-                    // Verificăm dacă următorul caracter după punct este o cifră
+                    // Verificam daca urmatorul caracter dupa punct este o cifra
                     if (!isdigit(v[i][pozitie_punct + 1]))
                     {
-                        // Dacă nu este cifră, afișăm eroarea și trecem la următoarea iterație
+                        // Daca nu este cifra, afisam eroarea si trecem la urmatoarea iteratie
                         Eroare_Tip(i, v[i], v[i + 1]);
                         continue;
                     }
                     if (tip[i + 2] != 7 || strlen(v[i + 2]) != 1 || v[i + 2][0] != 'x')
                     {
-                        // Dacă următorul token nu este 'x' după o cifră, afișăm eroarea
+                        // Daca urmatorul token nu este 'x' dupa o cifra, afisam eroarea
                         Eroare_Tip(i, v[i], v[i + 2]);
                         continue;
                     }
@@ -1547,7 +1556,7 @@ void Verificare_Tipuri(char v[MAX][MAX1 + 1], int tip[MAX], int lungime)
             }
             else if (tip[i] == 6)
             {
-                // Verificăm dacă tipul curent este număr
+                // Verificam daca tipul curent este numar
                 if (strstr(v[i], ".") != nullptr)
                 {
                     int lungime_v = strlen(v[i]);
@@ -1555,7 +1564,7 @@ void Verificare_Tipuri(char v[MAX][MAX1 + 1], int tip[MAX], int lungime)
 
                     if (pozitie_punct == lungime_v - 1 || !isdigit(v[i][pozitie_punct + 1]))
                     {
-                        // Punctul este ultimul caracter în șir sau nu este urmat de o cifră, deci eroare
+                        // Punctul este ultimul caracter in sir sau nu este urmat de o cifra, deci eroare
                         Eroare_Nepermis(i, v[i]);
                         continue;
                     }
@@ -1614,22 +1623,29 @@ bool Expresie_Corecta(Functie &F, float x)
     bool corect;
     Verificare_Paranteze(F.expresie);
     Verificare_Tipuri(F.vect,F.Tip,F.lung);
+    // Daca nu sunt erori la nivelul parantezelor si tipurilor, continuam cu verificarea domeniului
     if(poz == 0)
     {
+         // Verificam domeniul expresiei la x si -201.1
         Verificare_Domeniu(F,x);
+        // Salvam pozitia actuala pentru a compara cu verificarea urmatoare
         int p = poz;
+        // Resetam poz si x si efectuam o noua verificare de domeniu
         poz = 0;
         x = -201.1;
+        //-201.1 - valoare speciala pentru a testa comportamenul functiei
         Verificare_Domeniu(F,x);
+        // Daca numarul de erori dupa a doua verificare este diferit de cel dinainte, resetam poz
         if(p != poz)
             poz = 0;
         else
         {
+            // Daca avem mai multe erori in prima verificare, pastram acea valoare in poz
             if(p > poz)
                 poz = p;
         }
     }
-
+    // Daca nu avem erori dupa cele doua verificari, consideram expresia corecta
     if(poz==0)
     {
         if(limba == 'r')
@@ -1646,7 +1662,7 @@ bool Expresie_Corecta(Functie &F, float x)
             strcpy(a[0],"The expression is not correct!");
         corect = false;
     }
-
+    // Afisam mesajele din vectorul a
     for(int i=0;i<=poz;i++)
         cout<<a[i]<<endl;
 
@@ -1676,26 +1692,17 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
 
     char text[100] = " ";
 
-    //backbutton image
-    char backbutton_image[255] = "";
-    strcpy(backbutton_image, projectpath);
-    strcat(backbutton_image, "\\images\\backbutton.gif");
-
-
-    readimagefile( backbutton_image, -30, 0, screen_width + 60, screen_height);
-
     //backbutton
     backToMenu();
     setfillstyle(SOLID_FILL, COLOR(3, 57, 108));
     setbkcolor(COLOR(3, 57, 108));
     settextstyle(3, HORIZ_DIR, 3);
-    settextjustify( 1, 2);
+    settextjustify(1, 2);
     setcolor(0);
-
-    //outtextxy(135, 130, text);
 
     chenarBackButton = {30, screen_height - 100, 230, screen_height - 75};
 
+    //resetam culoarea
     setbkcolor(COLOR(28,33,39));
     setcolor(15);
 
@@ -1712,7 +1719,7 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
 
     // Partea pentru introducerea functiei
     setcolor(0);
-    if(func_pressed)
+    if(apasatFunc)
         setlinestyle(0, USERBIT_LINE, 3);
     else
         setlinestyle(0, USERBIT_LINE, 1);
@@ -1730,9 +1737,9 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
     if (nrFunctie == 0) {
 
         if (limba == 'r')
-            sprintf(text, "Fixati intervalul de reprezentare al functiilor: [a, b]");
+            sprintf(text, "Fixati intervalul de reprezentare al functiilor:");
         else if (limba == 'e')
-            sprintf(text, "Set the representation range for all functions: [a, b]");
+            sprintf(text, "Set the representation range for all functions:");
 
         int width3 = textwidth(text);
         outtextxy((screen_width-width3)/2, 210+height, text);
@@ -1743,25 +1750,25 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
 
         //Partea cu introducerea valorii lui a
         setcolor(15);
-        if(a_pressed)
+        if(apasatA)
             setlinestyle(0, USERBIT_LINE, 3);
         else
             setlinestyle(0, USERBIT_LINE, 1);
 
-        int width4 = textwidth("a= ");
-        outtextxy( (screen_width - width3)/2 + 100, 250+height, "a= ");
+        int width4 = textwidth("a: ");
+        outtextxy( (screen_width - width3)/2 + 100, 250+height, "a: ");
         rectangle( (screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height);
 
         chenarA = {(screen_width - width3)/2 + width4 + 100, 240+height, (screen_width - width3)/2 + width4 + 220, 300+height};
 
         //Partea cu introducerea valorii lui b
-        if(b_pressed)
+        if(apasatB)
             setlinestyle(0, USERBIT_LINE, 3);
         else
             setlinestyle(0, USERBIT_LINE, 1);
 
-        int width5 = textwidth("b= ");
-        outtextxy( (screen_width + width3)/2 - 220 - width5, 250+height, "b= ");
+        int width5 = textwidth("b: ");
+        outtextxy( (screen_width + width3)/2 - 220 - width5, 250+height, "b: ");
         rectangle((screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height);
 
         chenarB = {(screen_width + width3)/2 - 220, 240+height, (screen_width + width3)/2 - 100, 300+height};
@@ -1790,7 +1797,7 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
     if(poz > 6)
         poz = 6;
 
-    for(int i=0;i<=poz;i++)
+    for(int i = 0; i <= poz; i++)
     {
         if(strcmp(a[0],"Expresie corecta!") && strcmp(a[0],"The expression is correct!"))
         {
@@ -1871,9 +1878,9 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
     int x;
     int y;
 
-    func_pressed = true;
-    a_pressed = false;
-    b_pressed = false;
+    apasatFunc = true;
+    apasatA = false;
+    apasatB = false;
 
     int page = 3;
 
@@ -1897,16 +1904,16 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
 
             if(esteApasat(functie, x, y))
             {
-                func_pressed = true;
-                a_pressed = false;
-                b_pressed = false;
+                apasatFunc = true;
+                apasatA = false;
+                apasatB = false;
                 d = true;
             }
             else if(esteApasat(chenarFisier, x, y))
             {
-                func_pressed = true;
-                a_pressed = false;
-                b_pressed = false;
+                apasatFunc = true;
+                apasatA = false;
+                apasatB = false;
                 d = true;
 
                 citesteFisier(f_expresie, "function.txt");
@@ -1916,16 +1923,16 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
             }
             else if(esteApasat(chenarA, x, y))
             {
-                func_pressed = false;
-                a_pressed = true;
-                b_pressed = false;
+                apasatFunc = false;
+                apasatA = true;
+                apasatB = false;
                 d = true;
             }
             else if(esteApasat(chenarB, x, y))
             {
-                func_pressed = false;
-                a_pressed = false;
-                b_pressed = true;
+                apasatFunc = false;
+                apasatA = false;
+                apasatB = true;
                 d = true;
             }
             else if(esteApasat(chenarBackButton, x, y))
@@ -1995,14 +2002,14 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
             }
             else
             {
-                func_pressed = false;
-                a_pressed = false;
-                b_pressed = false;
+                apasatFunc = false;
+                apasatA = false;
+                apasatB = false;
                 d = true;
             }
         }
 
-            if(func_pressed)
+            if(apasatFunc)
             {
                 if(kbhit())
                 {
@@ -2031,7 +2038,7 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
                     }
                 }
             }
-            if(a_pressed)
+            if(apasatA)
             {
                 if(kbhit())
                 {
@@ -2058,7 +2065,7 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
                     }
                 }
             }
-            if(b_pressed)
+            if(apasatB)
             {
                 if(kbhit())
                 {
@@ -2108,7 +2115,7 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
                 page = page == 3? 4 : 3;
                 d = false;
             }
-            if(!(func_pressed || a_pressed || b_pressed))
+            if(!(apasatFunc || apasatA || apasatB))
                 if(kbhit())
                     c = getch();
     }
@@ -2271,16 +2278,16 @@ void reguli() {
 void read_reguli_page()
 {
 
-    int ac_page = getactivepage();
-    int vs_page = getvisualpage();
+    int activePage = getactivepage();
+    int visualPage = getvisualpage();
 
-    setactivepage(vs_page);
-    setvisualpage(ac_page);
+    setactivepage(visualPage);
+    setvisualpage(activePage);
 
     reguli();
 
-    setactivepage(ac_page);
-    setvisualpage(vs_page);
+    setactivepage(activePage);
+    setvisualpage(visualPage);
 
     int x;
     int y;
@@ -2337,15 +2344,14 @@ void setari() {
     else if (limba == 'e')
         strcpy(text, "Select language: ");
     outtextxy(180, 135, text);
-
+    //desenam flagul pentru limba programului
     setcolor(1);
     readimagefile(imagineFlag, screen_width - 380, 130, screen_width - 300, 170);
     rectangle(screen_width - 380, 130, screen_width - 300, 170);
 
-    // Draw the frame for the language selection
     chenarFlag = {screen_width - 380, 130, screen_width - 300, 170};
 
-    // Draw the frame for the number of functions
+    // desenam partea pentru numarul de functii
     setcolor(15);
     int height = textheight(text);
     if (limba == 'r')
@@ -2353,7 +2359,7 @@ void setari() {
     else if (limba == 'e')
         strcpy(text, "Number of Functions: ");
 
-    if (nrFunctii_pressed)
+    if (apasatNrFunctii)
         setlinestyle(0, USERBIT_LINE, 3);
     else
         setlinestyle(0, USERBIT_LINE, 1);
@@ -2415,7 +2421,7 @@ void read_setari_page()
     char c = ' ';
     c = nrFunctii[0];
 
-    nrFunctii_pressed = false;
+    apasatNrFunctii = false;
 
     while(true)
     {
@@ -2441,7 +2447,7 @@ void read_setari_page()
             }
             else if(esteApasat(chenarNrFunctii, x, y))
             {
-                nrFunctii_pressed = true;
+                apasatNrFunctii = true;
                 d = true;
             }
             else if(esteApasat(chenarBackButton, x, y))
@@ -2455,21 +2461,17 @@ void read_setari_page()
                 nrFunctii[1] = '\0';
                 numFunctions = stoi(nrFunctii);
                 scrieFisier(nrFunctii, "numFunctions.txt");
-                nrFunctii_pressed = false;
+                apasatNrFunctii = false;
                 d = true;
             }
 
             else
             {
-                //nrFunctii[0] = c;
-                //nrFunctii[1] = '\0';
-                //numFunctions = stoi(nrFunctii);
-                //scrieFisier(nrFunctii, "numFunctions.txt");
-                nrFunctii_pressed = false;
+                apasatNrFunctii = false;
                 d = true;
             }
         }
-        if(nrFunctii_pressed)
+        if(apasatNrFunctii)
         {
             if(kbhit())
             {
@@ -2494,8 +2496,10 @@ void read_setari_page()
                     d = true;
                 }
             }
-            else if(!c){
-                c = '1';
+            else if(!nrFunctii){
+                nrFunctii[1] = '1';
+                nrFunctii[2] = '\0';
+                d = true;
             }
         }
 
@@ -2515,7 +2519,7 @@ void read_setari_page()
         page = page == 3? 4 : 3;
         d = false;
         }
-        if(!nrFunctii_pressed)
+        if(!apasatNrFunctii)
             if(kbhit())
                 c = getch();
 
@@ -2619,7 +2623,7 @@ void deseneazaMenu() {
     else if(limba == 'e')
         strcat(imagineFlag, "\\images\\flag_engleza.gif");
 
-    setcolor(1);
+    setcolor(15);
     readimagefile(imagineFlag, screen_width - 180, 110, screen_width - 100, 150);
     rectangle(screen_width - 180, 110, screen_width - 100, 150);
 
@@ -2633,23 +2637,23 @@ void deseneazaMenu() {
 void read_menu()
 {
 
-    int ac_page = getactivepage();
-    int vs_page = getvisualpage();
+    int activePage = getactivepage();
+    int visualPage = getvisualpage();
 
-    setactivepage(vs_page);
-    setvisualpage(ac_page);
+    setactivepage(visualPage);
+    setvisualpage(activePage);
 
     deseneazaMenu();
 
-    setactivepage(ac_page);
-    setvisualpage(vs_page);
+    setactivepage(activePage);
+    setvisualpage(visualPage);
 
     int x;
     int y;
     char nr[5];
     citesteFisier(nr, "numFunctions.txt");
     numFunctions = stoi(nr);
-
+    // verifica daca putem aplica pe ecran modificarile facute, adica am scris ceva, sau am apasat un buton
     bool d = true;
 
     while(true)
@@ -2696,13 +2700,13 @@ void read_menu()
         }
         if(d)
         {
-            setactivepage(vs_page);
-            setvisualpage(ac_page);
+            setactivepage(visualPage);
+            setvisualpage(activePage);
 
             deseneazaMenu();
 
-            setactivepage(ac_page);
-            setvisualpage(vs_page);
+            setactivepage(activePage);
+            setvisualpage(visualPage);
             d = false;
         }
     }
@@ -2714,11 +2718,11 @@ bool tastaApasata(char c, Grafic &g)
     switch(c)
     {
         case 'z':
-            if(g.x1 + 4 < g.x2)
+            if(g.x1 + 5 < g.x2)
             {
-                g.x1 += 0.5;
-                g.x2 -= 0.5;
-                g.y1 -= 0.25;
+                g.x1 += 1;
+                g.x2 -= 1;
+                g.y1 -= 0.5;
                 g.y2 = g.y1 - (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
                 return true;
             }
@@ -2726,9 +2730,9 @@ bool tastaApasata(char c, Grafic &g)
         case 'u':
             if((g.x2 - g.x1) <= 250 && g.x2 <= 200 && g.x1 >= -200 && g.y1 <= 150 && g.y2 >= -150)
             {
-                g.x1 -= 0.5;
-                g.x2 += 0.5;
-                g.y1 += 0.25;
+                g.x1 -= 1;
+                g.x2 += 1;
+                g.y1 += 0.5;
                 g.y2 = g.y1 - (g.x2 - g.x1)*(g.y2_ecran - g.y1_ecran)/(g.x2_ecran - g.x1_ecran);
                 return true;
             }
@@ -2844,6 +2848,22 @@ void mouseClick(Grafic& g, bool& d, apasat& apasat)
     }
 }
 
+void drawGraphs(Grafic g, FunctionGraph functionGraphs[], int numFunctions, int page, apasat &apasat) {
+
+    setactivepage(page);
+    setvisualpage(1 - page);
+
+    cleardevice();
+
+    for (int i = 0; i < numFunctions; ++i) {
+
+        deseneazaGrafic(g, functionGraphs[i]);
+        deseneazaMinMax(g, functionGraphs[i].minGraf, functionGraphs[i].maxGraf, apasat.minimGraf, apasat.maximGraf);
+    }
+
+    deseneazaButoane(g, apasat, projectpath);
+}
+
 int main() {
 
     Grafic g;
@@ -2878,6 +2898,7 @@ int main() {
     bool d = true;
 
     bool f_ok = true;
+
     while(true)
     {
         if(meniu)
@@ -2888,7 +2909,6 @@ int main() {
         }
         if(apasat.citesteFunctie)
         {
-            apasat.citesteFunctie = false;
 
             for(int i = 0; i < numFunctions; i++) {
 
@@ -2896,6 +2916,7 @@ int main() {
 
                 if(meniu) {
                     i=numFunctions;
+                    d = false;
                     continue;
                 }
 
@@ -2939,6 +2960,7 @@ int main() {
 
                 setcolor(WHITE);
 
+
             }
             setactivepage(page);
             setvisualpage(1-page);
@@ -2964,27 +2986,24 @@ int main() {
             setvisualpage(1-page);
             page = 1-page;
 
+            apasat.citesteFunctie = false;
         }
 
         if(kbhit())
         {
             c = getch();
             if (tastaApasata(c, g))
+            {
                 d = true;
+            }
+
         }
 
         mouseClick(g, d, apasat);
 
         if(d)
         {
-            cleardevice();
-            for(int i = 0; i < numFunctions; ++i) {
-
-                deseneazaGrafic(g, functionGraphs[i]);
-                deseneazaMinMax(g, functionGraphs[i].minGraf, functionGraphs[i].maxGraf, apasat.minimGraf, apasat.maximGraf);
-            }
-
-            deseneazaButoane(g, apasat, projectpath);
+            drawGraphs(g, functionGraphs, numFunctions, page, apasat);
 
             if(apasat.salveaza)
             {
@@ -2995,7 +3014,7 @@ int main() {
 
             setactivepage(1-page);
             setvisualpage(page);
-            page = 1-page;
+            page = 1 - page;
 
             d = false;
         }
