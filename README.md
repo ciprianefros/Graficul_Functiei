@@ -1,1 +1,1 @@
-# Proiect_IP_Function_Graph
+# Graficul_Functiei
