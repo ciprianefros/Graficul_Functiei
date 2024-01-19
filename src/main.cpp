@@ -33,7 +33,7 @@ char Alfabet[200]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 char OperatiiBinare[200]="+-*/^<>=#";
 char OperatiiUnare[200]="sctbdfghnarel";
 char Operatii[200]="+-*/^sctbdfghnarel<>=#";
-char Cifre[13]="0123456789qx";
+char Cifre[14]="0123456789qxk";
 char Caractere_Nepermise[300]="!@#$%&;'_[]{},~`\|""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 char limba;
@@ -45,6 +45,7 @@ char a_salvat[5] = "";
 char b_salvat[5] = "";
 
 const float pi=3.1415926; // se da sub forma literei q
+const float euler = 2.71828; // se da sub forma literei k
 
 int x, y;
 //Variabile booleene care verifica daca se pot desena asimptotele
@@ -334,17 +335,17 @@ void tokenize(char expr[MAX])
                                                                                        2) in fata nu exista o cifra
                                                                                        3) in fata nu se afla ')'     */
 
-            if((expr[i]=='-' || expr[i]=='+') && strchr(Cifre,expr[i+1]) && (i==0 || (strchr(Cifre,expr[i-1])==NULL || strchr(Alfabet,expr[i-1])!=NULL) && strchr("xq",expr[i-1])==NULL) && expr[i-1]!=')')
+            if((expr[i]=='-' || expr[i]=='+') && strchr(Cifre,expr[i+1]) && (i==0 || (strchr(Cifre,expr[i-1])==NULL || strchr(Alfabet,expr[i-1])!=NULL) && strchr("xqk",expr[i-1])==NULL) && expr[i-1]!=')')
             {
                     s[k++]=expr[i++];
                     s[k++]='1';
                     s[k++]=' ';
                     s[k++]='*';
                     s[k++]=' ';
-                    if((strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.' ) &&
+                    if((strchr(Cifre,expr[i]) != NULL && strchr("xqk",expr[i+1])==NULL || expr[i]=='.' ) &&
                             strchr(OperatiiBinare,expr[i+1])==NULL && expr[i+1]!=')' && expr[i+1]!=NULL) // se ocupa de cifrele consecutive sau de cele care contin '.', adaugand spatii intre ele
                     {
-                        while((strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.') &&
+                        while((strchr(Cifre,expr[i]) != NULL && strchr("xqk",expr[i+1])==NULL || expr[i]=='.') &&
                             strchr(OperatiiBinare,expr[i+1])==NULL && expr[i+1]!=')' && expr[i+1]!=NULL)
                         s[k++]=expr[i++];
 
@@ -359,7 +360,7 @@ void tokenize(char expr[MAX])
 
             }
 
-            else ///Cifre[13]="0123456789qx";
+            else ///Cifre[13]="0123456789qxk";
                  /*este cifra daca 1) in fata ei a fost '('
                                    2) este prima din sir
                                    3) in fata ei este un operator */ ///sin(2x)
@@ -371,14 +372,14 @@ void tokenize(char expr[MAX])
                         expr[i+1] != ')' &&
                         expr[i+1] != '(' &&
                         expr[i+1] != NULL &&
-                        (strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.' ) )
+                        (strchr(Cifre,expr[i]) != NULL && strchr("xqk",expr[i+1])==NULL || expr[i]=='.' ) )
                 {
                     while ( strchr(OperatiiBinare,expr[i+1]) == NULL &&
                             strchr(Alfabet,expr[i+1]) == NULL &&
                             expr[i+1] != ')' &&
                             expr[i+1] != '(' &&
                             expr[i+1] != NULL &&
-                            (strchr(Cifre,expr[i]) != NULL && strchr("xq",expr[i+1])==NULL || expr[i]=='.' ) )
+                            (strchr(Cifre,expr[i]) != NULL && strchr("xqk",expr[i+1])==NULL || expr[i]=='.' ) )
                         s[k++]=expr[i++];
 
                     s[k++]=expr[i++];
@@ -392,7 +393,7 @@ void tokenize(char expr[MAX])
             }
             else
 
-            if(strchr("xq",expr[i])!=NULL)
+            if(strchr("xqk",expr[i])!=NULL)
             {
                 s[k++]=expr[i++];
                 s[k++]=' ';
@@ -542,6 +543,9 @@ double ValoareFunctie(Functie F, double x)
                 case 'q': top1++;
                           Opd[top1]=pi;
                           break;
+                case 'k': top1++;
+                          Opd[top1]=euler;
+                          break;
                 case 'x': top1++;
                           Opd[top1]=x;
                           break;
@@ -653,7 +657,7 @@ double ValoareFunctie(Functie F, double x)
 void Tip(Functie &F)
 {
     char tip_cifre[14]="0123456789";
-    char tip_litere[3]="xq";
+    char tip_litere[4]="xqk";
     for(int i=0; i<F.lung; i++)
     {
         if(F.vect[i][0]=='(')
@@ -974,8 +978,6 @@ void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool des
 
     char str[15] = {""};
 
-    // maxim
-    char maxim[30];
 
     // desenare minim
     Punct minGraficEcran = translate(minGrafic, g);
@@ -985,7 +987,7 @@ void deseneazaMinMax(const Grafic& g, Punct minGrafic, Punct maxGrafic, bool des
         circle(minGraficEcran.x, minGraficEcran.y , 10);
         /*line(minGraficEcran.x, minGraficEcran.y, minGraficEcran.x, minGraficEcran.y + 10);
         char minPoint[] = "MIN(";
-        gcvt(minGrafic.x, 2, str);
+        gcvt(minGrafic.x, 2, str); //converteste un double la un string
         strcat(minPoint, str);
         strcat(minPoint, ",");
         gcvt(minGrafic.y, 1, str);
@@ -1136,6 +1138,7 @@ bool esteApasat(coordonateButon buton, int x, int y)
 
 bool apasaPeButton(Grafic& g, int x, int y, bool& d, apasat& apasat)
 {
+    //coordonatele butoanelor de pe pagina cu graficul
     const coordonateButon backToMenuButton = {g.x1_ecran + 17, g.y1_ecran + 25, g.x1_ecran + 165, g.y1_ecran + 60};
     const coordonateButon salveaza = {g.x1_ecran + 17, g.y1_ecran + 70, g.x1_ecran + 117, g.y1_ecran + 110};
     const coordonateButon minim = {g.x1_ecran + 20, g.y2_ecran - 80, g.x1_ecran + 80, g.y2_ecran - 40};
@@ -1719,6 +1722,7 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
 
     // Partea pentru introducerea functiei
     setcolor(0);
+
     if(apasatFunc)
         setlinestyle(0, USERBIT_LINE, 3);
     else
@@ -1734,6 +1738,7 @@ void deseneazaPaginaCitireFunctie(int nrFunctie)
     // Partea pentru afisarea mesajului despre interval
     settextstyle(10, HORIZ_DIR, 4);
     setcolor(15);
+
     if (nrFunctie == 0) {
 
         if (limba == 'r')
@@ -2024,7 +2029,7 @@ void read_paginaCitesteFunctie(Functie& f, bool& meniu, bool& f_ok, int nrFuncti
                             d = true;
                         }
                     }
-                    else if(strchr("+-*/^x1234567890sincoartgdblqep()<>=#." , c))
+                    else if(strchr("+-*/^x1234567890sincoartgdblqepk()<>=#." , c))
                     {
                         if(!(f_expresie[i_func-1] == '/' && c == '0') && !(f_expresie[i_func-2] == '/' && f_expresie[i_func-1] == '(' && c == '0'))
                         {
@@ -2125,6 +2130,7 @@ void reguli() {
     if (limba == 'e')
     {
         cleardevice();
+        setlinestyle(0, USERBIT_LINE, 1);
         settextstyle(BOLD_FONT, HORIZ_DIR, 6);
         setcolor(15);
         outtextxy(screen_width / 2 - 100, 50, "Rules");
@@ -2203,6 +2209,7 @@ void reguli() {
         settextstyle(BOLD_FONT, HORIZ_DIR, 6);
         setcolor(15);
         outtextxy(screen_width / 2 - 100, 50, "Reguli");
+        setlinestyle(0, USERBIT_LINE, 1);
 
         settextstyle(SIMPLEX_FONT, HORIZ_DIR, 2);
 
@@ -2486,10 +2493,15 @@ void read_setari_page()
                         d = true;
                     }
                 }
+                else if( c == 13)
+                {
+                    d = true;
+                    apasatNrFunctii = false;
+                }
             }
             else if(strchr("123456789", c))
             {
-                if(i_nrFunc < 1)
+                if(i_nrFunc < 1 && c != 13)
                 {
                     nrFunctii[i_nrFunc] = c;
                     ++i_nrFunc;
@@ -2614,21 +2626,6 @@ void deseneazaMenu() {
 
     chenarIesire = {screen_width / 2 - 160, optionHeight, screen_width / 2 + 140, optionHeight + 50};
 
-    //desenam chenarul pentru limba
-    char imagineFlag[255] = "";
-    strcpy(imagineFlag, projectpath);
-
-    if(limba == 'r')
-        strcat(imagineFlag, "\\images\\flag_romana.gif");
-    else if(limba == 'e')
-        strcat(imagineFlag, "\\images\\flag_engleza.gif");
-
-    setcolor(15);
-    readimagefile(imagineFlag, screen_width - 180, 110, screen_width - 100, 150);
-    rectangle(screen_width - 180, 110, screen_width - 100, 150);
-
-    chenarFlag = {screen_width - 180, 110, screen_width - 100, 150};
-
 }
 
 
@@ -2653,6 +2650,7 @@ void read_menu()
     char nr[5];
     citesteFisier(nr, "numFunctions.txt");
     numFunctions = stoi(nr);
+
     // verifica daca putem aplica pe ecran modificarile facute, adica am scris ceva, sau am apasat un buton
     bool d = true;
 
@@ -2799,7 +2797,7 @@ void mouseClick(Grafic& g, bool& d, apasat& apasat)
         cury = mousey();
 
         Punct current;
-        current.x = curx * precizie; // imultim cu precizia daca dadeam translate erau glitch-uri
+        current.x = curx * precizie; // imultim cu precizia
         current.y = cury * precizie;
         current = translateInapoi(current, g);
 
@@ -2898,6 +2896,8 @@ int main() {
     bool d = true;
 
     bool f_ok = true;
+
+    existaAsimptote = false;
 
     while(true)
     {
